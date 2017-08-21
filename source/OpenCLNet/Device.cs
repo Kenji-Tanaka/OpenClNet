@@ -46,6 +46,12 @@ namespace OpenCLNet {
 			sb.AppendLine("PreferredVectorWidthLong: " + this.PreferredVectorWidthLong);
 			sb.AppendLine("PreferredVectorWidthFloat: " + this.PreferredVectorWidthFloat);
 			sb.AppendLine("PreferredVectorWidthDouble: " + this.PreferredVectorWidthDouble);
+			sb.AppendLine("NativeVectorWidthChar: " + this.NativeVectorWidthChar);
+			sb.AppendLine("NativeVectorWidthShort: " + this.NativeVectorWidthShort);
+			sb.AppendLine("NativeVectorWidthInt: " + this.NativeVectorWidthInt);
+			sb.AppendLine("NativeVectorWidthLong: " + this.NativeVectorWidthLong);
+			sb.AppendLine("NativeVectorWidthFloat: " + this.NativeVectorWidthFloat);
+			sb.AppendLine("NativeVectorWidthDouble: " + this.NativeVectorWidthDouble);
 			sb.AppendLine("MaxClockFrequency: " + this.MaxClockFrequency);
 			sb.AppendLine("AddressBits: " + this.AddressBits);
 			sb.AppendLine("MaxMemAllocSize: " + this.MaxMemAllocSize);
@@ -247,6 +253,20 @@ namespace OpenCLNet {
 		public UInt32 PreferredVectorWidthDouble => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_DOUBLE);
 
 		public UInt32 PreferredVectorWidthHalf => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_HALF);
+
+		public UInt32 NativeVectorWidthChar => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.NATIVE_VECTOR_WIDTH_CHAR);
+
+		public UInt32 NativeVectorWidthShort => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.NATIVE_VECTOR_WIDTH_SHORT);
+
+		public UInt32 NativeVectorWidthInt => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.NATIVE_VECTOR_WIDTH_INT);
+
+		public UInt32 NativeVectorWidthLong => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.NATIVE_VECTOR_WIDTH_LONG);
+
+		public UInt32 NativeVectorWidthFloat => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.NATIVE_VECTOR_WIDTH_FLOAT);
+
+		public UInt32 NativeVectorWidthDouble => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.NATIVE_VECTOR_WIDTH_DOUBLE);
+
+		public UInt32 NativeVectorWidthHalf => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.NATIVE_VECTOR_WIDTH_HALF);
 
 		/// <summary>
 		///     Maximum configured clock frequency of the device in MHz.
