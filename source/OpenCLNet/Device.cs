@@ -348,7 +348,7 @@ namespace OpenCLNet {
 		/// </summary>
 		public UInt32 MinDataTypeAlignSize => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MIN_DATA_TYPE_ALIGN_SIZE);
 
-		public UInt64 SingleFPConfig => InteropTools.ReadULong(this, (UInt32)DeviceInfo.SINGLE_FP_CONFIG);
+		public FpConfig SingleFPConfig => (FpConfig)InteropTools.ReadULong(this, (UInt32)DeviceInfo.SINGLE_FP_CONFIG);
 
 		/// <summary>
 		///     Type of global memory cache supported. Valid values are: CL_NONE, CL_READ_ONLY_CACHE and CL_READ_WRITE_CACHE.
