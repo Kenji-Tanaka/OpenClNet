@@ -451,7 +451,7 @@ namespace OpenCLNet {
 		///     The mandated minimum capability is:
 		///     CL_QUEUE_PROFILING_ENABLE.
 		/// </summary>
-		public UInt64 QueueProperties => InteropTools.ReadULong(this, (UInt32)DeviceInfo.QUEUE_PROPERTIES);
+		public CommandQueueProperties QueueProperties => (CommandQueueProperties)InteropTools.ReadULong(this, (UInt32)DeviceInfo.QUEUE_PROPERTIES);
 
 		/// <summary>
 		///     The platform associated with this device.
