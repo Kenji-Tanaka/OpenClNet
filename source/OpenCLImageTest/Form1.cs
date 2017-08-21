@@ -1,362 +1,291 @@
-﻿/*
- * Copyright (c) 2009 Olav Kalgraf(olav.kalgraf@gmail.com)
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- */
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Windows.Forms;
 using System.IO;
-using OpenCLNet;
+using System.Windows.Forms;
 using CL = OpenCLNet;
 
-namespace OpenCLImageTest
-{
-    public partial class Form1 : Form
-    {
-        string OpenCLSource;
-        Bitmap TestImage;
-        Bitmap TestImageOutput;
+namespace OpenCLImageTest {
+	public partial class Form1 : Form {
+		readonly List<String> CallBackEventList = new List<String>();
+		CL.Kernel FilterKernel;
+		// Currently active context
+		CL.Context oclContext;
+		readonly CL.ContextNotify oclContextNotify;
+		// Command queue to selected device
+		CL.CommandQueue oclCQ;
+		// Currently selected device
+		CL.Device oclDevice;
+		// All devices in the currently selected platform
+		CL.Device[] oclDevices;
 
-        // Currently selected platform
-        Platform oclPlatform;
-        // All devices in the currently selected platform
-        Device[] oclDevices;
-        // Currently selected device
-        Device   oclDevice;
-        // Currently active context
-        Context  oclContext;
-        // Command queue to selected device
-        CommandQueue oclCQ;
+		Boolean oclFullyInitialized;
+		CL.Image OCLInputImage;
+		CL.Image OCLOutputImage;
 
-        // Current program+data
-        CL.Program oclProgram;
-        CL.Image OCLInputImage;
-        CL.Image OCLOutputImage;
-        Sampler OCLSampler;
-        Kernel FilterKernel;
+		// Currently selected platform
+		CL.Platform oclPlatform;
 
-        bool oclFullyInitialized = false;
-        ContextNotify oclContextNotify;
-        List<string> CallBackEventList = new List<string>();
+		// Current program+data
+		CL.Program oclProgram;
+		CL.Sampler OCLSampler;
+		String OpenCLSource;
+		Bitmap TestImage;
+		Bitmap TestImageOutput;
 
-        public Form1()
-        {
-            InitializeComponent();
-            oclContextNotify = new ContextNotify(OpenCLContextNotifyCallBack);
-        }
+		public Form1() {
+			this.InitializeComponent();
+			this.oclContextNotify = this.OpenCLContextNotifyCallBack;
+		}
 
-        public void SetupOpenCL()
-        {
-            if (OpenCL.NumberOfPlatforms == 0)
-            {
-                MessageBox.Show("OpenCL not available");
-                Application.Exit();
-            }
-        }
+		private void buttonScaleImage_Click(Object sender, EventArgs e) {
+			if (this.oclFullyInitialized) {
+				this.ScaleImage();
+			}
+			this.groupBoxScaled.Refresh();
+		}
 
-        public void PopulateOCLPlatformsComboBox()
-        {
-            comboBoxOpenCLPlatforms.Items.Clear();
-            for (int platformID = 0; platformID < OpenCL.NumberOfPlatforms; platformID++)
-            {
-                Platform p = OpenCL.GetPlatform(platformID);
+		private void comboBoxOpenCLDevices_SelectedIndexChanged(Object sender, EventArgs e) {
+			Boolean supportsImages;
+			Boolean supportsImageFormat;
 
-                comboBoxOpenCLPlatforms.Items.Add(p.Vendor+":"+p.Name+" "+p.Version);
-            }
-        }
+			try {
+				this.ReleaseDeviceResources();
+				this.panelScaled.Refresh();
 
-        public void PopulateOCLDevicesComboBox(Platform p, DeviceType deviceType)
-        {
-            Device[] devices = p.QueryDevices(deviceType);
-            comboBoxOpenCLDevices.Items.Clear();
-            foreach (Device d in devices)
-            {
-                comboBoxOpenCLDevices.Items.Add(d.Vendor + " " + d.Name);
-            }
-        }
+				this.oclDevice = this.oclDevices[this.comboBoxOpenCLDevices.SelectedIndex];
+				this.CreateContext(this.oclPlatform, this.oclDevice);
+				supportsImages = this.oclDevice.ImageSupport;
+				supportsImageFormat = this.oclContext.SupportsImageFormat(CL.MemFlags.READ_WRITE, CL.MemObjectType.IMAGE2D, CL.ChannelOrder.RGBA, CL.ChannelType.UNSIGNED_INT8);
+				if (this.oclDevice.ImageSupport && supportsImageFormat) {
+					this.buttonScaleImage.Enabled = true;
+					this.labelImageSupportIndicator.Text = "Yes";
+					this.OpenCLSource = File.ReadAllText(@"OpenCLFunctions.cl");
+					this.BuildOCLSource(this.OpenCLSource);
+					this.CreateOCLImages(this.oclContext);
+					this.oclFullyInitialized = true;
+				}
+				else {
+					this.buttonScaleImage.Enabled = false;
+					this.labelImageSupportIndicator.Text = "No " + (supportsImageFormat ? "(No Image support at all)" : "(Images supported, but no support for RGBA8888)");
+					this.oclContext = null;
+				}
+			}
+			catch (CL.OpenCLBuildException oclbe) {
+				MessageBox.Show(this, oclbe.BuildLogs[0], "OpenCL build error");
+			}
+			catch (CL.OpenCLException ocle) {
+				MessageBox.Show(this, ocle.Message, "OpenCL exception");
+			}
+		}
 
-        public void CreateContext( Platform platform, Device device )
-        {
-            IntPtr[] contextProperties = new IntPtr[]
-            {
-                (IntPtr)ContextProperties.PLATFORM, platform.PlatformID,
-                IntPtr.Zero, IntPtr.Zero
-            };
+		private void comboBoxOpenCLPlatforms_SelectedIndexChanged(Object sender, EventArgs e) {
+			try {
+				this.ReleaseDeviceResources();
 
-            Device[] devices = new Device[]
-            {
-                device
-            };
+				this.oclPlatform = CL.OpenCL.GetPlatform(this.comboBoxOpenCLPlatforms.SelectedIndex);
+				this.oclDevices = this.oclPlatform.QueryDevices(CL.DeviceType.ALL);
+				this.PopulateOCLDevicesComboBox(this.oclPlatform, CL.DeviceType.ALL);
+				if (this.comboBoxOpenCLDevices.Items.Count > 0) {
+					this.comboBoxOpenCLDevices.SelectedIndex = 0;
+				}
+				else {
+					this.oclDevice = null;
+				}
+			}
+			catch (CL.OpenCLException ocle) {
+				MessageBox.Show(this, ocle.Message, "OpenCL exception");
+			}
+		}
 
-            oclContext = platform.CreateContext(contextProperties, devices, oclContextNotify, IntPtr.Zero);
-            oclCQ = oclContext.CreateCommandQueue(device, CommandQueueProperties.PROFILING_ENABLE);
-        }
+		private void Form1_Load(Object sender, EventArgs e) {
+			try {
+				this.Setup();
+			}
+			catch (CL.OpenCLException ocle) {
+				MessageBox.Show(ocle.Message);
+				Application.Exit();
+			}
+		}
 
-        public void OpenCLContextNotifyCallBack(string errInfo, byte[] privateInfo, IntPtr cb, IntPtr userData)
-        {
-            CallBackEventList.Add( errInfo );
-            textBoxCallBackEvents.Lines = CallBackEventList.ToArray();
-        }
+		private void panelOriginal_Paint(Object sender, PaintEventArgs e) {
+			var g = e.Graphics;
 
-        public void BuildOCLSource(string source)
-        {
-            oclProgram = oclContext.CreateProgramWithSource(source);
-            oclProgram.Build();
-            FilterKernel = oclProgram.CreateKernel("FilterImage");
-        }
+			if (this.TestImage != null)
+				g.DrawImageUnscaled(this.TestImage, 0, 0);
+		}
 
-        public void CreateOCLImages(Context context)
-        {
-            OCLInputImage = CreateOCLBitmapFromBitmap(TestImage);
-            OCLOutputImage = oclContext.CreateImage2D(MemFlags.WRITE_ONLY, CL.ImageFormat.RGBA8U, panelScaled.Width, panelScaled.Height, 0, IntPtr.Zero);
-            OCLSampler = oclContext.CreateSampler(true, AddressingMode.CLAMP_TO_EDGE, FilterMode.LINEAR);
-        }
+		private void panelScaled_Paint(Object sender, PaintEventArgs e) {
+			var g = e.Graphics;
 
-        public void ReleaseDeviceResources()
-        {
-            oclFullyInitialized = false;
-            if (OCLSampler != null)
-            {
-                OCLSampler.Dispose();
-                OCLSampler = null;
-            }
-            if (OCLInputImage != null)
-            {
-                OCLInputImage.Dispose();
-                OCLInputImage = null;
-            }
+			if (this.oclFullyInitialized) {
+				if (this.TestImageOutput != null)
+					g.DrawImageUnscaled(this.TestImageOutput, 0, 0);
+			}
+		}
 
-            if (OCLOutputImage != null)
-            {
-                OCLOutputImage.Dispose();
-                OCLOutputImage = null;
-            }
+		public void BuildOCLSource(String source) {
+			this.oclProgram = this.oclContext.CreateProgramWithSource(source);
+			this.oclProgram.Build();
+			this.FilterKernel = this.oclProgram.CreateKernel("FilterImage");
+		}
 
-            if (FilterKernel != null)
-            {
-                FilterKernel.Dispose();
-                FilterKernel = null;
-            }
+		public void CopyOCLBitmapToBitmap(CL.Mem oclBitmap, Bitmap bitmap) {
+			var origin = new IntPtr[3];
+			var region = new IntPtr[3];
+			CL.Mem buffer;
 
-            if (oclProgram != null)
-            {
-                oclProgram.Dispose();
-                oclProgram = null;
-            }
+			var bd = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+			buffer = this.oclContext.CreateBuffer((CL.MemFlags)((Int64)CL.MemFlags.WRITE_ONLY | (Int64)CL.MemFlags.USE_HOST_PTR), bd.Height * bd.Stride, bd.Scan0);
+			origin[0] = (IntPtr)0;
+			origin[1] = (IntPtr)0;
+			origin[2] = (IntPtr)0;
+			region[0] = (IntPtr)bd.Width;
+			region[1] = (IntPtr)bd.Height;
+			region[2] = (IntPtr)1;
+			this.oclCQ.EnqueueCopyImageToBuffer(oclBitmap, buffer, origin, region, IntPtr.Zero);
+			this.oclCQ.EnqueueBarrier();
+			var p = this.oclCQ.EnqueueMapBuffer(buffer, true, CL.MapFlags.READ, IntPtr.Zero, (IntPtr)(bd.Height * bd.Stride));
+			this.oclCQ.EnqueueUnmapMemObject(buffer, p);
+			this.oclCQ.Finish();
+			buffer.Dispose();
+			bitmap.UnlockBits(bd);
+		}
 
-            if (oclCQ != null)
-            {
-                oclCQ.Dispose();
-                oclCQ = null;
-            }
+		public void CreateContext(CL.Platform platform, CL.Device device) {
+			var contextProperties = new[] {
+				(IntPtr)CL.ContextProperties.PLATFORM,
+				platform.PlatformID,
+				IntPtr.Zero,
+				IntPtr.Zero
+			};
 
-            if (oclContext != null)
-            {
-                oclContext.Dispose();
-                oclContext = null;
-            }
-        }
+			var devices = new[] {
+				device
+			};
 
-        public void Setup()
-        {
-            TestImage = (Bitmap)Bitmap.FromFile(@"Input0.png");
-            TestImage = new Bitmap(TestImage, 256, 256);
-            TestImageOutput = new Bitmap(panelScaled.Width, panelScaled.Height, PixelFormat.Format32bppArgb);
+			this.oclContext = platform.CreateContext(contextProperties, devices, this.oclContextNotify, IntPtr.Zero);
+			this.oclCQ = this.oclContext.CreateCommandQueue(device, CL.CommandQueueProperties.PROFILING_ENABLE);
+		}
 
-            if (OpenCL.NumberOfPlatforms <= 0)
-            {
-                MessageBox.Show("OpenCL not available");
-                Application.Exit();
-            }
+		public CL.Image CreateOCLBitmapFromBitmap(Bitmap bitmap) {
+			CL.Image oclImage;
 
-            PopulateOCLPlatformsComboBox();
-            oclPlatform = OpenCL.GetPlatform(0);
-            comboBoxOpenCLPlatforms.SelectedIndex = 0;
-        }
+			var bd = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+			oclImage = this.oclContext.CreateImage2D((CL.MemFlags)((Int64)CL.MemFlags.READ_ONLY | (Int64)CL.MemFlags.COPY_HOST_PTR),
+				CL.ImageFormat.RGBA8U, bd.Width, bd.Height, bd.Stride, bd.Scan0);
+			bitmap.UnlockBits(bd);
+			return oclImage;
+		}
 
-        public CL.Image CreateOCLBitmapFromBitmap(Bitmap bitmap)
-        {
-            CL.Image oclImage;
+		public void CreateOCLImages(CL.Context context) {
+			this.OCLInputImage = this.CreateOCLBitmapFromBitmap(this.TestImage);
+			this.OCLOutputImage = this.oclContext.CreateImage2D(CL.MemFlags.WRITE_ONLY, CL.ImageFormat.RGBA8U, this.panelScaled.Width, this.panelScaled.Height, 0, IntPtr.Zero);
+			this.OCLSampler = this.oclContext.CreateSampler(true, CL.AddressingMode.CLAMP_TO_EDGE, CL.FilterMode.LINEAR);
+		}
 
-            BitmapData bd = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            oclImage = oclContext.CreateImage2D((MemFlags)((long)MemFlags.READ_ONLY | (long)MemFlags.COPY_HOST_PTR),
-                CL.ImageFormat.RGBA8U, bd.Width, bd.Height, bd.Stride, bd.Scan0);
-            bitmap.UnlockBits(bd);
-            return oclImage;
-        }
+		public void OpenCLContextNotifyCallBack(String errInfo, Byte[] privateInfo, IntPtr cb, IntPtr userData) {
+			this.CallBackEventList.Add(errInfo);
+			this.textBoxCallBackEvents.Lines = this.CallBackEventList.ToArray();
+		}
 
-        public unsafe void CopyOCLBitmapToBitmap(Mem oclBitmap, Bitmap bitmap)
-        {
-            IntPtr[] origin = new IntPtr[3];
-            IntPtr[] region = new IntPtr[3];
-            Mem buffer;
+		public void PopulateOCLDevicesComboBox(CL.Platform p, CL.DeviceType deviceType) {
+			var devices = p.QueryDevices(deviceType);
+			this.comboBoxOpenCLDevices.Items.Clear();
+			foreach (var d in devices) {
+				this.comboBoxOpenCLDevices.Items.Add(d.Vendor + " " + d.Name);
+			}
+		}
 
-            BitmapData bd = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-            buffer = oclContext.CreateBuffer((MemFlags)((long)MemFlags.WRITE_ONLY | (long)MemFlags.USE_HOST_PTR), bd.Height * bd.Stride, bd.Scan0);
-            origin[0] = (IntPtr)0;
-            origin[1] = (IntPtr)0;
-            origin[2] = (IntPtr)0;
-            region[0] = (IntPtr)bd.Width;
-            region[1] = (IntPtr)bd.Height;
-            region[2] = (IntPtr)1;
-            oclCQ.EnqueueCopyImageToBuffer(oclBitmap, buffer, origin, region, IntPtr.Zero);
-            oclCQ.EnqueueBarrier();
-            IntPtr p = oclCQ.EnqueueMapBuffer(buffer, true, MapFlags.READ, IntPtr.Zero, (IntPtr)(bd.Height * bd.Stride));
-            oclCQ.EnqueueUnmapMemObject(buffer, p);
-            oclCQ.Finish();
-            buffer.Dispose();
-            bitmap.UnlockBits(bd);
-        }
+		public void PopulateOCLPlatformsComboBox() {
+			this.comboBoxOpenCLPlatforms.Items.Clear();
+			for (var platformID = 0; platformID < CL.OpenCL.NumberOfPlatforms; platformID++) {
+				var p = CL.OpenCL.GetPlatform(platformID);
 
-        public void ScaleImage()
-        {
-            IntPtr[] globalWorkSize = new IntPtr[3];
+				this.comboBoxOpenCLPlatforms.Items.Add(p.Vendor + ":" + p.Name + " " + p.Version);
+			}
+		}
 
-            globalWorkSize[0] = (IntPtr)TestImageOutput.Width;
-            globalWorkSize[1] = (IntPtr)TestImageOutput.Height;
-            FilterKernel.SetArg(0, 0.0f);
-            FilterKernel.SetArg(1, 0.0f);
-            FilterKernel.SetArg(2, 1.0f);
-            FilterKernel.SetArg(3, 1.0f);
-            FilterKernel.SetArg(4, 0.0f);
-            FilterKernel.SetArg(5, 0.0f);
-            FilterKernel.SetArg(6, 1.0f);
-            FilterKernel.SetArg(7, 1.0f);
-            FilterKernel.SetArg(8, OCLInputImage);
-            FilterKernel.SetArg(9, OCLOutputImage);
-            FilterKernel.SetArg(10, OCLSampler);
-            oclCQ.EnqueueNDRangeKernel(FilterKernel, 2, null, globalWorkSize, null);
-            oclCQ.EnqueueBarrier();
-            CopyOCLBitmapToBitmap(OCLOutputImage, TestImageOutput);
-            oclCQ.Finish();
-        }
+		public void ReleaseDeviceResources() {
+			this.oclFullyInitialized = false;
+			if (this.OCLSampler != null) {
+				this.OCLSampler.Dispose();
+				this.OCLSampler = null;
+			}
+			if (this.OCLInputImage != null) {
+				this.OCLInputImage.Dispose();
+				this.OCLInputImage = null;
+			}
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            try
-            {
-                Setup();
-            }
-            catch (OpenCLException ocle)
-            {
-                MessageBox.Show(ocle.Message);
-                Application.Exit();
-            }
-        }
+			if (this.OCLOutputImage != null) {
+				this.OCLOutputImage.Dispose();
+				this.OCLOutputImage = null;
+			}
 
-        private void buttonScaleImage_Click(object sender, EventArgs e)
-        {
-            if (oclFullyInitialized)
-            {
-                ScaleImage();
-            }
-            groupBoxScaled.Refresh();
-        }
+			if (this.FilterKernel != null) {
+				this.FilterKernel.Dispose();
+				this.FilterKernel = null;
+			}
 
-        private void panelOriginal_Paint(object sender, PaintEventArgs e)
-        {
-            Graphics g = e.Graphics;
+			if (this.oclProgram != null) {
+				this.oclProgram.Dispose();
+				this.oclProgram = null;
+			}
 
-            if (TestImage != null)
-                g.DrawImageUnscaled(TestImage, 0, 0);
-        }
+			if (this.oclCQ != null) {
+				this.oclCQ.Dispose();
+				this.oclCQ = null;
+			}
 
-        private void panelScaled_Paint(object sender, PaintEventArgs e)
-        {
-            Graphics g = e.Graphics;
+			if (this.oclContext != null) {
+				this.oclContext.Dispose();
+				this.oclContext = null;
+			}
+		}
 
-            if (oclFullyInitialized)
-            {
-                if (TestImageOutput != null)
-                    g.DrawImageUnscaled(TestImageOutput, 0, 0);
-            }
-        }
+		public void ScaleImage() {
+			var globalWorkSize = new IntPtr[3];
 
-        private void comboBoxOpenCLDevices_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            bool supportsImages;
-            bool supportsImageFormat;
+			globalWorkSize[0] = (IntPtr)this.TestImageOutput.Width;
+			globalWorkSize[1] = (IntPtr)this.TestImageOutput.Height;
+			this.FilterKernel.SetArg(0, 0.0f);
+			this.FilterKernel.SetArg(1, 0.0f);
+			this.FilterKernel.SetArg(2, 1.0f);
+			this.FilterKernel.SetArg(3, 1.0f);
+			this.FilterKernel.SetArg(4, 0.0f);
+			this.FilterKernel.SetArg(5, 0.0f);
+			this.FilterKernel.SetArg(6, 1.0f);
+			this.FilterKernel.SetArg(7, 1.0f);
+			this.FilterKernel.SetArg(8, this.OCLInputImage);
+			this.FilterKernel.SetArg(9, this.OCLOutputImage);
+			this.FilterKernel.SetArg(10, this.OCLSampler);
+			this.oclCQ.EnqueueNDRangeKernel(this.FilterKernel, 2, null, globalWorkSize, null);
+			this.oclCQ.EnqueueBarrier();
+			this.CopyOCLBitmapToBitmap(this.OCLOutputImage, this.TestImageOutput);
+			this.oclCQ.Finish();
+		}
 
-            try
-            {
-                ReleaseDeviceResources();
-                panelScaled.Refresh();
+		public void Setup() {
+			this.TestImage = (Bitmap)Image.FromFile(@"Input0.png");
+			this.TestImage = new Bitmap(this.TestImage, 256, 256);
+			this.TestImageOutput = new Bitmap(this.panelScaled.Width, this.panelScaled.Height, PixelFormat.Format32bppArgb);
 
-                oclDevice = oclDevices[comboBoxOpenCLDevices.SelectedIndex];
-                CreateContext(oclPlatform, oclDevice);
-                supportsImages = oclDevice.ImageSupport;
-                supportsImageFormat = oclContext.SupportsImageFormat(MemFlags.READ_WRITE, MemObjectType.IMAGE2D, ChannelOrder.RGBA, ChannelType.UNSIGNED_INT8);
-                if (oclDevice.ImageSupport && supportsImageFormat)
-                {
-                    buttonScaleImage.Enabled = true;
-                    labelImageSupportIndicator.Text = "Yes";
-                    OpenCLSource = File.ReadAllText(@"OpenCLFunctions.cl");
-                    BuildOCLSource(OpenCLSource);
-                    CreateOCLImages(oclContext);
-                    oclFullyInitialized = true;
-                }
-                else
-                {
-                    buttonScaleImage.Enabled = false;
-                    labelImageSupportIndicator.Text = "No " + (supportsImageFormat ? "(No Image support at all)" : "(Images supported, but no support for RGBA8888)");
-                    oclContext = null;
-                }
-            }
-            catch (OpenCLBuildException oclbe)
-            {
-                MessageBox.Show(this, oclbe.BuildLogs[0], "OpenCL build error");
-            }
-            catch (OpenCLException ocle)
-            {
-                MessageBox.Show(this, ocle.Message, "OpenCL exception");
-            }
-        }
+			if (CL.OpenCL.NumberOfPlatforms <= 0) {
+				MessageBox.Show("OpenCL not available");
+				Application.Exit();
+			}
 
-        private void comboBoxOpenCLPlatforms_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                ReleaseDeviceResources();
+			this.PopulateOCLPlatformsComboBox();
+			this.oclPlatform = CL.OpenCL.GetPlatform(0);
+			this.comboBoxOpenCLPlatforms.SelectedIndex = 0;
+		}
 
-                oclPlatform = OpenCL.GetPlatform(comboBoxOpenCLPlatforms.SelectedIndex);
-                oclDevices = oclPlatform.QueryDevices(DeviceType.ALL);
-                PopulateOCLDevicesComboBox(oclPlatform, DeviceType.ALL);
-                if (comboBoxOpenCLDevices.Items.Count > 0)
-                {
-                    comboBoxOpenCLDevices.SelectedIndex = 0;
-                }
-                else
-                {
-                    oclDevice = null;
-                }
-            }
-            catch (OpenCLException ocle)
-            {
-                MessageBox.Show(this, ocle.Message, "OpenCL exception");
-            }
-        }
-    }
+		public void SetupOpenCL() {
+			if (CL.OpenCL.NumberOfPlatforms == 0) {
+				MessageBox.Show("OpenCL not available");
+				Application.Exit();
+			}
+		}
+	}
 }

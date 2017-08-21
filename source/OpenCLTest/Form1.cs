@@ -1,130 +1,89 @@
-﻿/*
- * Copyright (c) 2009 Olav Kalgraf(olav.kalgraf@gmail.com)
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- */
-
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using OpenCLNet;
 
-namespace OpenCLTest
-{
-    public partial class Form1 : Form
-    {
-        Mandelbrot Mandelbrot;
-        int FromSetPtr = 0;
-        int ToSetPtr = 0;
-        float[,] Sets = new float[2, 4]
-            {
-                {-2.0f, 2.0f, 2.0f, -2.0f},
-                {-0.17225f, 0.66116f, -0.17115f, 0.660347f},
-            };
+namespace OpenCLTest {
+	public partial class Form1 : Form {
+		Int32 FromSetPtr;
+		Mandelbrot Mandelbrot;
+		readonly Single[,] Sets = new Single[2, 4] {
+			{ -2.0f, 2.0f, 2.0f, -2.0f },
+			{ -0.17225f, 0.66116f, -0.17115f, 0.660347f }
+		};
+		Int32 ToSetPtr;
+		DateTime ZoomStart;
 
-        TimeSpan ZoomTime = TimeSpan.FromSeconds(30);
-        DateTime ZoomStart;
+		TimeSpan ZoomTime = TimeSpan.FromSeconds(30);
 
-        public Form1()
-        {
-            InitializeComponent();
-        }
+		public Form1() {
+			this.InitializeComponent();
+		}
 
-        private void Form1_Load( object sender, EventArgs e )
-        {
-            try
-            {
-                Platform platform = OpenCL.GetPlatform(0);
-                Mandelbrot = new Mandelbrot(platform, Width, Height);
-                Mandelbrot.AllocBuffers();
-                UpdateMandelbrot();
-            }
-            catch (Exception oex)
-            {
-                MessageBox.Show( oex.ToString(), "OpenCL Initialization failed" );
-                Application.Exit();
-            }
-        }
+		private void Form1_Load(Object sender, EventArgs e) {
+			try {
+				var platform = OpenCL.GetPlatform(0);
+				this.Mandelbrot = new Mandelbrot(platform, this.Width, this.Height);
+				this.Mandelbrot.AllocBuffers();
+				this.UpdateMandelbrot();
+			}
+			catch (Exception oex) {
+				MessageBox.Show(oex.ToString(), "OpenCL Initialization failed");
+				Application.Exit();
+			}
+		}
 
-        protected int Align(int i, int align)
-        {
-            return (i + align - 1) / align * align;
-        }
+		private void startToolStripMenuItem_Click(Object sender, EventArgs e) {
+			this.startToolStripMenuItem.Enabled = false;
+			this.stopToolStripMenuItem.Enabled = true;
+			this.ToSetPtr = 1;
+			this.ZoomStart = DateTime.Now;
+			this.timer.Start();
+		}
 
-        protected override void OnPaintBackground(PaintEventArgs e)
-        {
-            UpdateMandelbrot();
-        }
+		private void stopToolStripMenuItem_Click(Object sender, EventArgs e) {
+			this.startToolStripMenuItem.Enabled = true;
+			this.stopToolStripMenuItem.Enabled = false;
+			this.ToSetPtr = 0;
+			this.ZoomStart = DateTime.Now;
+			this.timer.Start();
+		}
 
-        public void ZoomMandelbrot()
-        {
-            float zoomFactor = (float)((DateTime.Now - ZoomStart).TotalMilliseconds / ZoomTime.TotalMilliseconds);
-            Mandelbrot.Left = Sets[FromSetPtr, 0]+(float)((Sets[ToSetPtr, 0] - Sets[FromSetPtr, 0]) * zoomFactor);
-            Mandelbrot.Right = Sets[FromSetPtr, 2] + (float)((Sets[ToSetPtr, 2] - Sets[FromSetPtr, 2]) * zoomFactor);
-            Mandelbrot.Top = Sets[FromSetPtr, 1] + (float)((Sets[ToSetPtr, 1] - Sets[FromSetPtr, 1]) * zoomFactor);
-            Mandelbrot.Bottom = Sets[FromSetPtr, 3] + (float)((Sets[ToSetPtr, 3] - Sets[FromSetPtr, 3]) * zoomFactor);
-            UpdateMandelbrot();
-        }
+		private void timer_Tick(Object sender, EventArgs e) {
+			var dt = DateTime.Now - this.ZoomStart;
+			if (dt >= this.ZoomTime) {
+				this.timer.Stop();
+				this.FromSetPtr = this.ToSetPtr;
+			}
+			this.ZoomMandelbrot();
+		}
 
-        private void UpdateMandelbrot()
-        {
-            Mandelbrot.Calculate();
+		private void UpdateMandelbrot() {
+			this.Mandelbrot.Calculate();
 
-            using (Graphics gfx = this.CreateGraphics())
-            {
-                gfx.DrawImageUnscaled(Mandelbrot.Bitmap, 0, 0);
-                gfx.DrawString("ms per frame="+Mandelbrot.CalculationTimeMS, Font, Brushes.Yellow, new PointF(50.0f, 50.0f));
-            }
-        }
+			using (var gfx = this.CreateGraphics()) {
+				gfx.DrawImageUnscaled(this.Mandelbrot.Bitmap, 0, 0);
+				gfx.DrawString("ms per frame=" + this.Mandelbrot.CalculationTimeMS, this.Font, Brushes.Yellow, new PointF(50.0f, 50.0f));
+			}
+		}
 
-        private void startToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            startToolStripMenuItem.Enabled = false;
-            stopToolStripMenuItem.Enabled = true;
-            ToSetPtr = 1;
-            ZoomStart = DateTime.Now;
-            timer.Start();
-        }
+		protected Int32 Align(Int32 i, Int32 align) {
+			return (i + align - 1) / align * align;
+		}
 
-        private void stopToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            startToolStripMenuItem.Enabled = true;
-            stopToolStripMenuItem.Enabled = false;
-            ToSetPtr = 0;
-            ZoomStart = DateTime.Now;
-            timer.Start();
-        }
+		protected override void OnPaintBackground(PaintEventArgs e) {
+			this.UpdateMandelbrot();
+		}
 
-        private void timer_Tick(object sender, EventArgs e)
-        {
-            TimeSpan dt = DateTime.Now - ZoomStart;
-            if (dt >= ZoomTime)
-            {
-                timer.Stop();
-                FromSetPtr = ToSetPtr;
-            }
-            ZoomMandelbrot();
-        }
-    }
+		public void ZoomMandelbrot() {
+			var zoomFactor = (Single)((DateTime.Now - this.ZoomStart).TotalMilliseconds / this.ZoomTime.TotalMilliseconds);
+			this.Mandelbrot.Left = this.Sets[this.FromSetPtr, 0] + (this.Sets[this.ToSetPtr, 0] - this.Sets[this.FromSetPtr, 0]) * zoomFactor;
+			this.Mandelbrot.Right = this.Sets[this.FromSetPtr, 2] + (this.Sets[this.ToSetPtr, 2] - this.Sets[this.FromSetPtr, 2]) * zoomFactor;
+			this.Mandelbrot.Top = this.Sets[this.FromSetPtr, 1] + (this.Sets[this.ToSetPtr, 1] - this.Sets[this.FromSetPtr, 1]) * zoomFactor;
+			this.Mandelbrot.Bottom = this.Sets[this.FromSetPtr, 3] + (this.Sets[this.ToSetPtr, 3] - this.Sets[this.FromSetPtr, 3]) * zoomFactor;
+			this.UpdateMandelbrot();
+		}
+	}
 }
 
 #if false

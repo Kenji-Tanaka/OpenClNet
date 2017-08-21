@@ -1,327 +1,269 @@
-﻿/*
- * Copyright (c) 2009 Olav Kalgraf(olav.kalgraf@gmail.com)
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- */
-
-using System;
+﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.IO;
 
-namespace OpenCLNet
-{
-    public class InteropTools
-    {
-        public unsafe interface IPropertyContainer
-        {
-            IntPtr GetPropertySize(uint key);
-            void ReadProperty(uint key, IntPtr keyLength, void* pBuffer);
-        }
+namespace OpenCLNet {
+	public class InteropTools {
+		public static unsafe void A3ToIntPtr3(Int32[] a, IntPtr* b) {
+			if (a == null || b == null)
+				return;
 
-        public static unsafe void IntPtrToIntPtr(int num, IntPtr[] a, IntPtr* b)
-        {
-            if (a == null)
-                return;
+			b[0] = (IntPtr)a[0];
+			b[1] = (IntPtr)a[1];
+			b[2] = (IntPtr)a[2];
+		}
 
-            if (num > a.Length)
-                throw new ArgumentOutOfRangeException();
-            for (int i = 0; i < num; i++)
-                b[i] = a[i];
-        }
+		public static unsafe void A3ToIntPtr3(Int64[] a, IntPtr* b) {
+			if (a == null || b == null)
+				return;
 
-        public static unsafe void A3ToIntPtr3(int[] a, IntPtr* b)
-        {
-            if (a == null || b == null)
-                return;
+			b[0] = (IntPtr)a[0];
+			b[1] = (IntPtr)a[1];
+			b[2] = (IntPtr)a[2];
+		}
 
-            b[0] = (IntPtr)a[0];
-            b[1] = (IntPtr)a[1];
-            b[2] = (IntPtr)a[2];
-        }
+		public static unsafe void AToIntPtr(Int32 count, Int32[] a, IntPtr* b) {
+			if (a == null || b == null)
+				return;
 
-        public static unsafe void A3ToIntPtr3(long[] a, IntPtr* b)
-        {
-            if (a == null || b == null)
-                return;
+			for (var i = 0; i < count; i++)
+				b[i] = (IntPtr)a[i];
+		}
 
-            b[0] = (IntPtr)a[0];
-            b[1] = (IntPtr)a[1];
-            b[2] = (IntPtr)a[2];
-        }
+		public static unsafe void AToIntPtr(Int32 count, Int64[] a, IntPtr* b) {
+			if (a == null || b == null)
+				return;
 
-        public static unsafe void AToIntPtr(int count, int[] a, IntPtr* b)
-        {
-            if (a == null || b==null )
-                return;
+			for (var i = 0; i < count; i++)
+				b[i] = (IntPtr)a[i];
+		}
 
-            for (int i = 0; i < count; i++)
-                b[i] = (IntPtr)a[i];
-        }
+		public static Device[] ConvertDeviceIDsToDevices(Platform platform, IntPtr[] deviceIDs) {
+			Device[] devices;
 
-        public static unsafe void AToIntPtr(int count, long[] a, IntPtr* b)
-        {
-            if (a == null || b == null)
-                return;
+			if (deviceIDs == null)
+				return null;
 
-            for (int i = 0; i < count; i++)
-                b[i] = (IntPtr)a[i];
-        }
+			devices = new Device[deviceIDs.Length];
+			for (var i = 0; i < deviceIDs.Length; i++)
+				devices[i] = platform.GetDevice(deviceIDs[i]);
+			return devices;
+		}
 
-        public static byte[] CreateNullTerminatedString(string s)
-        {
-            int len;
-            byte[] data;
+		public static IntPtr[] ConvertDevicesToDeviceIDs(Device[] devices) {
+			IntPtr[] deviceIDs;
 
-            len = Encoding.UTF8.GetByteCount(s);
-            data = new byte[len + 1];
-            Encoding.UTF8.GetBytes(s, 0, s.Length, data, 0);
-            data[len] = 0;
-            return data;
-        }
+			if (devices == null)
+				return null;
 
-        public static IntPtr[] ConvertDevicesToDeviceIDs(Device[] devices)
-        {
-            IntPtr[] deviceIDs;
+			deviceIDs = new IntPtr[devices.Length];
+			for (var i = 0; i < devices.Length; i++)
+				deviceIDs[i] = devices[i];
+			return deviceIDs;
+		}
 
-            if (devices == null)
-                return null;
+		public static IntPtr[] ConvertEventsToEventIDs(Event[] events) {
+			IntPtr[] eventIDs;
 
-            deviceIDs = new IntPtr[devices.Length];
-            for (int i = 0; i < devices.Length; i++)
-                deviceIDs[i] = devices[i];
-            return deviceIDs;
-        }
+			if (events == null)
+				return null;
 
-        public static Device[] ConvertDeviceIDsToDevices(Platform platform, IntPtr[] deviceIDs)
-        {
-            Device[] devices;
+			eventIDs = new IntPtr[events.Length];
+			for (var i = 0; i < events.Length; i++)
+				eventIDs[i] = events[i];
+			return eventIDs;
+		}
 
-            if (deviceIDs == null)
-                return null;
+		public unsafe static void ConvertEventsToEventIDs(Int32 num, Event[] events, IntPtr* pHandles) {
+			if (events == null)
+				return;
+			if (num > events.Length)
+				throw new ArgumentOutOfRangeException();
 
-            devices = new Device[deviceIDs.Length];
-            for (int i = 0; i < deviceIDs.Length; i++)
-                devices[i] = platform.GetDevice(deviceIDs[i]);
-            return devices;
-        }
+			for (var i = 0; i < num; i++)
+				pHandles[i] = events[i].EventID;
+		}
 
-        public static IntPtr[] ConvertMemToMemIDs(Mem[] mems)
-        {
-            IntPtr[] memIDs;
+		public static IntPtr[] ConvertMemToMemIDs(Mem[] mems) {
+			IntPtr[] memIDs;
 
-            if (mems == null)
-                return null;
+			if (mems == null)
+				return null;
 
-            memIDs = new IntPtr[mems.Length];
-            for (int i = 0; i < mems.Length; i++)
-                memIDs[i] = mems[i].MemID;
-            return memIDs;
-        }
+			memIDs = new IntPtr[mems.Length];
+			for (var i = 0; i < mems.Length; i++)
+				memIDs[i] = mems[i].MemID;
+			return memIDs;
+		}
 
-        public static IntPtr[] ConvertEventsToEventIDs(Event[] events)
-        {
-            IntPtr[] eventIDs;
+		public static Byte[] CreateNullTerminatedString(String s) {
+			Int32 len;
+			Byte[] data;
 
-            if (events == null)
-                return null;
+			len = Encoding.UTF8.GetByteCount(s);
+			data = new Byte[len + 1];
+			Encoding.UTF8.GetBytes(s, 0, s.Length, data, 0);
+			data[len] = 0;
+			return data;
+		}
 
-            eventIDs = new IntPtr[events.Length];
-            for (int i = 0; i < events.Length; i++)
-                eventIDs[i] = events[i];
-            return eventIDs;
-        }
+		public static void HexDump(String filename, Byte[] array, Int32 width) {
+			var sw = new StreamWriter(filename);
 
-        public unsafe static void ConvertEventsToEventIDs(int num, Event[] events, IntPtr* pHandles)
-        {
-            if (events == null)
-                return;
-            if (num > events.Length)
-                throw new ArgumentOutOfRangeException();
+			InteropTools.HexDump(sw, array, width);
+			sw.Close();
+		}
 
-            for (int i = 0; i < num; i++)
-                pHandles[i] = events[i].EventID;
-        }
+		public static void HexDump(TextWriter tw, Byte[] array, Int32 width) {
+			var hexWidth = width * 3;
+			var charWidth = width;
+			var bytePtr = 0;
+			Int32 linePos;
 
-        #region Helper functions to read properties
+			while (bytePtr < array.Length) {
+				var dataLen = Math.Min(width, array.Length - bytePtr);
 
-        unsafe public static bool ReadBool(IPropertyContainer propertyContainer, uint key)
-        {
-            return ReadUInt(propertyContainer, key) == (uint)Bool.TRUE ? true : false;
-        }
+				tw.Write("{0:x8} ", bytePtr);
+				// Output hex
+				for (linePos = 0; linePos < dataLen; linePos++) {
+					var b = array[bytePtr + linePos];
 
-        unsafe public static byte[] ReadBytes(IPropertyContainer propertyContainer, uint key)
-        {
-            IntPtr size;
+					tw.Write("{0:x2} ", (Int32)b);
+				}
+				for (; linePos < width; linePos++)
+					tw.Write("   ");
 
-            size = propertyContainer.GetPropertySize(key);
-            byte[] data = new byte[size.ToInt64()];
-            fixed (byte* pData = data)
-            {
-                propertyContainer.ReadProperty(key, size, pData);
-            }
-            return data;
-        }
+				// Output characters
+				for (linePos = 0; linePos < dataLen; linePos++) {
+					var b = array[bytePtr + linePos];
+					var c = (Char)b;
+					if (Char.IsControl(c))
+						c = '.';
+					tw.Write(c);
+				}
+				for (; linePos < width; linePos++)
+					tw.Write(" ");
 
-        unsafe public static string ReadString(IPropertyContainer propertyContainer, uint key)
-        {
-            IntPtr size;
-            string s;
+				tw.WriteLine();
+				bytePtr += dataLen;
+			}
+		}
 
-            size = propertyContainer.GetPropertySize((uint)key);
-            byte[] stringData = new byte[size.ToInt64()];
-            fixed (byte* pStringData = stringData)
-            {
-                propertyContainer.ReadProperty((uint)key, size, pStringData);
-            }
+		public static unsafe void IntPtrToIntPtr(Int32 num, IntPtr[] a, IntPtr* b) {
+			if (a == null)
+				return;
 
-            s = Encoding.UTF8.GetString(stringData);
-            int nullIndex = s.IndexOf('\0');
-            if (nullIndex >= 0)
-                return s.Substring(0, nullIndex);
-            else
-                return s;
-        }
+			if (num > a.Length)
+				throw new ArgumentOutOfRangeException();
+			for (var i = 0; i < num; i++)
+				b[i] = a[i];
+		}
 
-        unsafe public static int ReadInt(IPropertyContainer propertyContainer, uint key)
-        {
-            int output;
+		public unsafe interface IPropertyContainer {
+			IntPtr GetPropertySize(UInt32 key);
+			void ReadProperty(UInt32 key, IntPtr keyLength, void* pBuffer);
+		}
 
-            propertyContainer.ReadProperty(key, new IntPtr(sizeof(int)), &output);
-            return output;
-        }
+		#region Helper functions to read properties
+		public static Boolean ReadBool(IPropertyContainer propertyContainer, UInt32 key) {
+			return InteropTools.ReadUInt(propertyContainer, key) == (UInt32)Bool.TRUE ? true : false;
+		}
 
-        unsafe public static uint ReadUInt(IPropertyContainer propertyContainer, uint key)
-        {
-            uint output;
+		unsafe public static Byte[] ReadBytes(IPropertyContainer propertyContainer, UInt32 key) {
+			IntPtr size;
 
-            propertyContainer.ReadProperty(key, new IntPtr(sizeof(uint)), &output);
-            return output;
-        }
+			size = propertyContainer.GetPropertySize(key);
+			var data = new Byte[size.ToInt64()];
+			fixed (Byte* pData = data) {
+				propertyContainer.ReadProperty(key, size, pData);
+			}
+			return data;
+		}
 
-        unsafe public static long ReadLong(IPropertyContainer propertyContainer, uint key)
-        {
-            long output;
+		unsafe public static String ReadString(IPropertyContainer propertyContainer, UInt32 key) {
+			IntPtr size;
+			String s;
 
-            propertyContainer.ReadProperty(key, new IntPtr(sizeof(long)), &output);
-            return output;
-        }
+			size = propertyContainer.GetPropertySize(key);
+			var stringData = new Byte[size.ToInt64()];
+			fixed (Byte* pStringData = stringData) {
+				propertyContainer.ReadProperty(key, size, pStringData);
+			}
 
-        unsafe public static ulong ReadULong(IPropertyContainer propertyContainer, uint key)
-        {
-            ulong output;
+			s = Encoding.UTF8.GetString(stringData);
+			var nullIndex = s.IndexOf('\0');
+			if (nullIndex >= 0)
+				return s.Substring(0, nullIndex);
+			else
+				return s;
+		}
 
-            propertyContainer.ReadProperty(key, new IntPtr(sizeof(ulong)), &output);
-            return output;
-        }
+		unsafe public static Int32 ReadInt(IPropertyContainer propertyContainer, UInt32 key) {
+			Int32 output;
 
-        unsafe public static IntPtr ReadIntPtr(IPropertyContainer propertyContainer, uint key)
-        {
-            IntPtr output;
+			propertyContainer.ReadProperty(key, new IntPtr(sizeof(Int32)), &output);
+			return output;
+		}
 
-            propertyContainer.ReadProperty(key, new IntPtr(sizeof(IntPtr)), &output);
-            return output;
-        }
+		unsafe public static UInt32 ReadUInt(IPropertyContainer propertyContainer, UInt32 key) {
+			UInt32 output;
 
-        unsafe public static IntPtr[] ReadIntPtrArray(IPropertyContainer propertyContainer, uint key)
-        {
-            IntPtr size = propertyContainer.GetPropertySize(key);
-            long numElements = (long)size / sizeof(IntPtr);
-            IntPtr[] ptrs = new IntPtr[numElements];
-            byte[] data = InteropTools.ReadBytes(propertyContainer, key);
+			propertyContainer.ReadProperty(key, new IntPtr(sizeof(UInt32)), &output);
+			return output;
+		}
 
-            fixed (byte* pData = data)
-            {
-                void** pBS = (void**)pData;
-                for (int i = 0; i < numElements; i++)
-                    ptrs[i] = new IntPtr(pBS[i]);
-            }
-            return ptrs;
-        }
+		unsafe public static Int64 ReadLong(IPropertyContainer propertyContainer, UInt32 key) {
+			Int64 output;
 
-        unsafe public static void ReadPreAllocatedBytePtrArray(IPropertyContainer propertyContainer, uint key, byte[][] buffers)
-        {
-            GCHandle[] pinnedArrays = new GCHandle[buffers.Length];
-            
-            // Pin arrays
-            for( int i=0; i<buffers.Length; i++ )
-                pinnedArrays[i] = GCHandle.Alloc( buffers[i], GCHandleType.Pinned );
+			propertyContainer.ReadProperty(key, new IntPtr(sizeof(Int64)), &output);
+			return output;
+		}
 
-            byte** pointerArray = stackalloc byte*[buffers.Length];
-            for( int i=0; i<buffers.Length; i++ )
-                pointerArray[i] = (byte*)(pinnedArrays[i].AddrOfPinnedObject().ToPointer());
+		unsafe public static UInt64 ReadULong(IPropertyContainer propertyContainer, UInt32 key) {
+			UInt64 output;
 
-            propertyContainer.ReadProperty(key, new IntPtr(sizeof(IntPtr) * buffers.Length), pointerArray);
+			propertyContainer.ReadProperty(key, new IntPtr(sizeof(UInt64)), &output);
+			return output;
+		}
 
-            for (int i = 0; i < buffers.Length; i++)
-                pinnedArrays[i].Free();
-        }
-        #endregion
+		unsafe public static IntPtr ReadIntPtr(IPropertyContainer propertyContainer, UInt32 key) {
+			IntPtr output;
 
-        public static void HexDump(string filename, byte[] array, int width)
-        {
-            StreamWriter sw = new StreamWriter(filename);
+			propertyContainer.ReadProperty(key, new IntPtr(sizeof(IntPtr)), &output);
+			return output;
+		}
 
-            HexDump(sw, array, width);
-            sw.Close();
-        }
+		unsafe public static IntPtr[] ReadIntPtrArray(IPropertyContainer propertyContainer, UInt32 key) {
+			var size = propertyContainer.GetPropertySize(key);
+			var numElements = (Int64)size / sizeof(IntPtr);
+			var ptrs = new IntPtr[numElements];
+			var data = InteropTools.ReadBytes(propertyContainer, key);
 
-        public static void HexDump(TextWriter tw, byte[] array, int width)
-        {
-            int hexWidth = width*3;
-            int charWidth = width;
-            int bytePtr = 0;
-            int linePos;
+			fixed (Byte* pData = data) {
+				var pBS = (void**)pData;
+				for (var i = 0; i < numElements; i++)
+					ptrs[i] = new IntPtr(pBS[i]);
+			}
+			return ptrs;
+		}
 
-            while (bytePtr < array.Length)
-            {
-                int dataLen = Math.Min(width, array.Length - bytePtr);
+		unsafe public static void ReadPreAllocatedBytePtrArray(IPropertyContainer propertyContainer, UInt32 key, Byte[][] buffers) {
+			var pinnedArrays = new GCHandle[buffers.Length];
 
-                tw.Write( string.Format("{0:x8} ", bytePtr) );
-                // Output hex
-                for (linePos = 0; linePos < dataLen; linePos++)
-                {
-                    byte b = array[bytePtr + linePos];
+			// Pin arrays
+			for (var i = 0; i < buffers.Length; i++)
+				pinnedArrays[i] = GCHandle.Alloc(buffers[i], GCHandleType.Pinned);
 
-                    tw.Write(string.Format("{0:x2} ", (int)b));
-                }
-                for (; linePos < width; linePos++)
-                    tw.Write("   ");
+			Byte** pointerArray = stackalloc Byte*[buffers.Length];
+			for (var i = 0; i < buffers.Length; i++)
+				pointerArray[i] = (Byte*)(pinnedArrays[i].AddrOfPinnedObject().ToPointer());
 
-                // Output characters
-                for (linePos = 0; linePos < dataLen; linePos++)
-                {
-                    byte b = array[bytePtr + linePos];
-                    char c = (char)b;
-                    if (Char.IsControl(c))
-                        c = '.';
-                    tw.Write(c);
-                }
-                for (; linePos < width; linePos++)
-                    tw.Write(" ");
+			propertyContainer.ReadProperty(key, new IntPtr(sizeof(IntPtr) * buffers.Length), pointerArray);
 
-                tw.WriteLine();
-                bytePtr += dataLen;
-            }
-        }
-    }
+			for (var i = 0; i < buffers.Length; i++)
+				pinnedArrays[i].Free();
+		}
+		#endregion
+	}
 }

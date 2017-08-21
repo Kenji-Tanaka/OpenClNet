@@ -1,261 +1,229 @@
-﻿/*
- * Copyright (c) 2009 Olav Kalgraf(olav.kalgraf@gmail.com)
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- */
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace OpenCLNet
-{
+namespace OpenCLNet {
+	unsafe public class Platform : InteropTools.IPropertyContainer {
+		readonly IntPtr[] DeviceIDs;
+		Device[] DeviceList;
 
-    unsafe public class Platform : InteropTools.IPropertyContainer
-    {
-        public IntPtr PlatformID { get; protected set; }
-        /// <summary>
-        /// Equal to "FULL_PROFILE" if the implementation supports the OpenCL specification or
-        /// "EMBEDDED_PROFILE" if the implementation supports the OpenCL embedded profile.
-        /// </summary>
-        public string Profile { get { return InteropTools.ReadString( this, (uint)PlatformInfo.PROFILE ); } }
-        /// <summary>
-        /// OpenCL version string. Returns the OpenCL version supported by the implementation. This version string
-        /// has the following format: OpenCL&lt;space&gt;&lt;major_version.minor_version&gt;&lt;space&gt;&lt;platform specific information&gt;
-        /// </summary>
-        public string Version { get { return InteropTools.ReadString( this, (uint)PlatformInfo.VERSION ); } }
-        /// <summary>
-        /// Platform name string
-        /// </summary>
-        public string Name { get { return InteropTools.ReadString( this, (uint)PlatformInfo.NAME ); } }
-        /// <summary>
-        /// Platform Vendor string
-        /// </summary>
-        public string Vendor { get { return InteropTools.ReadString( this, (uint)PlatformInfo.VENDOR ); } }
-        /// <summary>
-        /// Space separated string of extension names.
-        /// Note that this class has some support functions to help query extension capbilities.
-        /// This property is only present for completeness.
-        /// </summary>
-        public string Extensions { get { return InteropTools.ReadString( this, (uint)PlatformInfo.EXTENSIONS ); } }
-        /// <summary>
-        /// Convenience method to get at the major_version field in the Version string
-        /// </summary>
-        public int OpenCLMajorVersion { get; protected set; }
-        /// <summary>
-        /// Convenience method to get at the minor_version field in the Version string
-        /// </summary>
-        public int OpenCLMinorVersion { get; protected set; }
+		readonly Regex VersionStringRegex = new Regex("OpenCL (?<Major>[0-9]+)\\.(?<Minor>[0-9]+)");
+		protected Dictionary<IntPtr, Device> _Devices = new Dictionary<IntPtr, Device>();
 
-        Regex VersionStringRegex = new Regex("OpenCL (?<Major>[0-9]+)\\.(?<Minor>[0-9]+)");
-        protected Dictionary<IntPtr, Device> _Devices = new Dictionary<IntPtr, Device>();
-        Device[] DeviceList;
-        IntPtr[] DeviceIDs;
+		protected HashSet<String> ExtensionHashSet = new HashSet<String>();
 
-        protected HashSet<string> ExtensionHashSet = new HashSet<string>();
+		/// <summary>
+		///     Space separated string of extension names.
+		///     Note that this class has some support functions to help query extension capbilities.
+		///     This property is only present for completeness.
+		/// </summary>
+		public String Extensions {
+			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.EXTENSIONS); }
+		}
 
-        public Platform( IntPtr platformID )
-        {
-            PlatformID = platformID;
+		/// <summary>
+		///     Platform name string
+		/// </summary>
+		public String Name {
+			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.NAME); }
+		}
 
-            // Create a local representation of all devices
-            DeviceIDs = QueryDeviceIntPtr( DeviceType.ALL );
-            for( int i=0; i<DeviceIDs.Length; i++ )
-                _Devices[DeviceIDs[i]] = new Device( this, DeviceIDs[i] );
-            DeviceList = InteropTools.ConvertDeviceIDsToDevices( this, DeviceIDs );
+		/// <summary>
+		///     Convenience method to get at the major_version field in the Version string
+		/// </summary>
+		public Int32 OpenCLMajorVersion { get; protected set; }
+		/// <summary>
+		///     Convenience method to get at the minor_version field in the Version string
+		/// </summary>
+		public Int32 OpenCLMinorVersion { get; protected set; }
+		public IntPtr PlatformID { get; protected set; }
 
-            InitializeExtensionHashSet();
+		/// <summary>
+		///     Equal to "FULL_PROFILE" if the implementation supports the OpenCL specification or
+		///     "EMBEDDED_PROFILE" if the implementation supports the OpenCL embedded profile.
+		/// </summary>
+		public String Profile {
+			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.PROFILE); }
+		}
 
-            Match m = VersionStringRegex.Match(Version);
-            if (m.Success)
-            {
-                OpenCLMajorVersion = int.Parse(m.Groups["Major"].Value);
-                OpenCLMinorVersion = int.Parse(m.Groups["Minor"].Value);
-            }
-            else
-            {
-                OpenCLMajorVersion = 1;
-                OpenCLMinorVersion = 0;
-            }
-        }
+		/// <summary>
+		///     Platform Vendor string
+		/// </summary>
+		public String Vendor {
+			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.VENDOR); }
+		}
 
-        public Context CreateDefaultContext()
-        {
-            return CreateDefaultContext(null, IntPtr.Zero);
-        }
+		/// <summary>
+		///     OpenCL version string. Returns the OpenCL version supported by the implementation. This version string
+		///     has the following format: OpenCL&lt;space&gt;&lt;major_version.minor_version&gt;&lt;space&gt;&lt;platform specific information&gt;
+		/// </summary>
+		public String Version {
+			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.VERSION); }
+		}
 
-        public Context CreateDefaultContext( ContextNotify notify, IntPtr userData )
-        {
-            IntPtr[] properties = new IntPtr[]
-            {
-                new IntPtr((long)ContextProperties.PLATFORM), PlatformID,
-                IntPtr.Zero,
-            };
+		public Platform(IntPtr platformID) {
+			this.PlatformID = platformID;
 
-            IntPtr contextID;
-            ErrorCode result;
+			// Create a local representation of all devices
+			this.DeviceIDs = this.QueryDeviceIntPtr(DeviceType.ALL);
+			for (var i = 0; i < this.DeviceIDs.Length; i++)
+				this._Devices[this.DeviceIDs[i]] = new Device(this, this.DeviceIDs[i]);
+			this.DeviceList = InteropTools.ConvertDeviceIDsToDevices(this, this.DeviceIDs);
 
-            contextID = (IntPtr)OpenCL.CreateContext( properties,
-                (uint)DeviceIDs.Length,
-                DeviceIDs,
-                notify,
-                userData,
-                out result );
-            if( result!=ErrorCode.SUCCESS )
-                throw new OpenCLException( "CreateContext failed with error code: "+result, result);
-            return new Context( this, contextID );
-        }
+			this.InitializeExtensionHashSet();
 
-        public Context CreateContext(IntPtr[] contextProperties, Device[] devices, ContextNotify notify, IntPtr userData)
-        {
-            IntPtr contextID;
-            ErrorCode result;
+			var m = this.VersionStringRegex.Match(this.Version);
+			if (m.Success) {
+				this.OpenCLMajorVersion = Int32.Parse(m.Groups["Major"].Value);
+				this.OpenCLMinorVersion = Int32.Parse(m.Groups["Minor"].Value);
+			}
+			else {
+				this.OpenCLMajorVersion = 1;
+				this.OpenCLMinorVersion = 0;
+			}
+		}
 
-            IntPtr[] deviceIDs = InteropTools.ConvertDevicesToDeviceIDs(devices);
-            contextID = (IntPtr)OpenCL.CreateContext(contextProperties,
-                (uint)deviceIDs.Length,
-                deviceIDs,
-                notify,
-                userData,
-                out result);
-            if (result != ErrorCode.SUCCESS)
-                throw new OpenCLException("CreateContext failed with error code: " + result, result);
-            return new Context(this, contextID);
-        }
+		public static implicit operator IntPtr(Platform p) {
+			return p.PlatformID;
+		}
 
-        public Context CreateContextFromType(IntPtr[] contextProperties, DeviceType deviceType, ContextNotify notify, IntPtr userData)
-        {
-            IntPtr contextID;
-            ErrorCode result;
+		protected void InitializeExtensionHashSet() {
+			var ext = this.Extensions.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-            contextID = (IntPtr)OpenCL.CreateContextFromType(contextProperties,
-                deviceType,
-                notify,
-                userData,
-                out result);
-            if (result != ErrorCode.SUCCESS)
-                throw new OpenCLException("CreateContextFromType failed with error code: " + result, result);
-            return new Context(this, contextID);
-        }
+			foreach (var s in ext)
+				this.ExtensionHashSet.Add(s);
+		}
 
-        public Device GetDevice( IntPtr index )
-        {
-            return _Devices[index];
-        }
+		protected IntPtr[] QueryDeviceIntPtr(DeviceType deviceType) {
+			ErrorCode result;
+			UInt32 numberOfDevices;
+			IntPtr[] deviceIDs;
 
-        protected IntPtr[] QueryDeviceIntPtr( DeviceType deviceType )
-        {
-            ErrorCode result;
-            uint numberOfDevices;
-            IntPtr[] deviceIDs;
+			result = OpenCL.GetDeviceIDs(this.PlatformID, deviceType, 0, null, out numberOfDevices);
+			if (result == ErrorCode.DEVICE_NOT_FOUND)
+				return new IntPtr[0];
 
-            result = (ErrorCode)OpenCL.GetDeviceIDs( PlatformID, deviceType, 0, null, out numberOfDevices );
-            if (result == ErrorCode.DEVICE_NOT_FOUND)
-                return new IntPtr[0];
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("GetDeviceIDs failed: " + result, result);
 
-            if( result!=ErrorCode.SUCCESS )
-                throw new OpenCLException( "GetDeviceIDs failed: "+((ErrorCode)result).ToString(), result);
+			deviceIDs = new IntPtr[numberOfDevices];
+			result = OpenCL.GetDeviceIDs(this.PlatformID, deviceType, numberOfDevices, deviceIDs, out numberOfDevices);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("GetDeviceIDs failed: " + result, result);
 
-            deviceIDs = new IntPtr[numberOfDevices];
-            result = (ErrorCode)OpenCL.GetDeviceIDs( PlatformID, deviceType, numberOfDevices, deviceIDs, out numberOfDevices );
-            if (result != ErrorCode.SUCCESS)
-                throw new OpenCLException( "GetDeviceIDs failed: "+((ErrorCode)result).ToString(), result);
+			return deviceIDs;
+		}
 
-            return deviceIDs;
-        }
+		public Context CreateContext(IntPtr[] contextProperties, Device[] devices, ContextNotify notify, IntPtr userData) {
+			IntPtr contextID;
+			ErrorCode result;
 
-        /// <summary>
-        /// Find all devices of a specififc type
-        /// </summary>
-        /// <param name="deviceType"></param>
-        /// <returns>Array containing the devices</returns>
-        public Device[] QueryDevices( DeviceType deviceType )
-        {
-            IntPtr[] deviceIDs;
+			var deviceIDs = InteropTools.ConvertDevicesToDeviceIDs(devices);
+			contextID = OpenCL.CreateContext(contextProperties,
+				(UInt32)deviceIDs.Length,
+				deviceIDs,
+				notify,
+				userData,
+				out result);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("CreateContext failed with error code: " + result, result);
+			return new Context(this, contextID);
+		}
 
-            deviceIDs = QueryDeviceIntPtr( deviceType );
-            return InteropTools.ConvertDeviceIDsToDevices( this, deviceIDs );
-        }
+		public Context CreateContextFromType(IntPtr[] contextProperties, DeviceType deviceType, ContextNotify notify, IntPtr userData) {
+			IntPtr contextID;
+			ErrorCode result;
 
-        protected void InitializeExtensionHashSet()
-        {
-            string[] ext = Extensions.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+			contextID = OpenCL.CreateContextFromType(contextProperties,
+				deviceType,
+				notify,
+				userData,
+				out result);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("CreateContextFromType failed with error code: " + result, result);
+			return new Context(this, contextID);
+		}
 
-            foreach (string s in ext)
-                ExtensionHashSet.Add(s);
-        }
+		public Context CreateDefaultContext() {
+			return this.CreateDefaultContext(null, IntPtr.Zero);
+		}
 
-        /// <summary>
-        /// Test if this platform supports a specific extension
-        /// </summary>
-        /// <param name="extension"></param>
-        /// <returns>Returns true if the extension is supported</returns>
-        public bool HasExtension(string extension)
-        {
-            return ExtensionHashSet.Contains(extension);
-        }
+		public Context CreateDefaultContext(ContextNotify notify, IntPtr userData) {
+			var properties = new[] {
+				new IntPtr((Int64)ContextProperties.PLATFORM),
+				this.PlatformID,
+				IntPtr.Zero
+			};
 
-        /// <summary>
-        /// Test if this platform supports a set of exentions
-        /// </summary>
-        /// <param name="extensions"></param>
-        /// <returns>Returns true if all the extensions are supported</returns>
-        public bool HasExtensions(string[] extensions)
-        {
-            foreach (string s in extensions)
-                if (!ExtensionHashSet.Contains(s))
-                    return false;
-            return true;
-        }
+			IntPtr contextID;
+			ErrorCode result;
 
-        public static implicit operator IntPtr( Platform p )
-        {
-            return p.PlatformID;
-        }
+			contextID = OpenCL.CreateContext(properties,
+				(UInt32)this.DeviceIDs.Length, this.DeviceIDs,
+				notify,
+				userData,
+				out result);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("CreateContext failed with error code: " + result, result);
+			return new Context(this, contextID);
+		}
 
-        #region IPropertyContainer Members
+		public Device GetDevice(IntPtr index) {
+			return this._Devices[index];
+		}
 
-        public IntPtr GetPropertySize( uint key )
-        {
-            IntPtr propertySize;
-            ErrorCode result;
+		/// <summary>
+		///     Test if this platform supports a specific extension
+		/// </summary>
+		/// <param name="extension"></param>
+		/// <returns>Returns true if the extension is supported</returns>
+		public Boolean HasExtension(String extension) {
+			return this.ExtensionHashSet.Contains(extension);
+		}
 
-            result = (ErrorCode)OpenCL.GetPlatformInfo( PlatformID, key, IntPtr.Zero, null, out propertySize );
-            if( result!=ErrorCode.SUCCESS )
-                throw new OpenCLException( "Unable to get platform info for platform "+PlatformID+": "+result, result);
-            return propertySize;
+		/// <summary>
+		///     Test if this platform supports a set of exentions
+		/// </summary>
+		/// <param name="extensions"></param>
+		/// <returns>Returns true if all the extensions are supported</returns>
+		public Boolean HasExtensions(String[] extensions) {
+			foreach (var s in extensions)
+				if (!this.ExtensionHashSet.Contains(s))
+					return false;
+			return true;
+		}
 
-        }
+		/// <summary>
+		///     Find all devices of a specififc type
+		/// </summary>
+		/// <param name="deviceType"></param>
+		/// <returns>Array containing the devices</returns>
+		public Device[] QueryDevices(DeviceType deviceType) {
+			IntPtr[] deviceIDs;
 
-        public void ReadProperty( uint key, IntPtr keyLength, void* pBuffer )
-        {
-            IntPtr propertySize;
-            ErrorCode result;
+			deviceIDs = this.QueryDeviceIntPtr(deviceType);
+			return InteropTools.ConvertDeviceIDsToDevices(this, deviceIDs);
+		}
 
-            result = (ErrorCode)OpenCL.GetPlatformInfo( PlatformID, key, keyLength, (void*)pBuffer, out propertySize );
-            if( result!=ErrorCode.SUCCESS )
-                throw new OpenCLException( "Unable to get platform info for platform "+PlatformID+": "+result, result);
-        }
+		#region IPropertyContainer Members
+		public IntPtr GetPropertySize(UInt32 key) {
+			IntPtr propertySize;
+			ErrorCode result;
 
-        #endregion
-    }
+			result = OpenCL.GetPlatformInfo(this.PlatformID, key, IntPtr.Zero, null, out propertySize);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("Unable to get platform info for platform " + this.PlatformID + ": " + result, result);
+			return propertySize;
+		}
+
+		public void ReadProperty(UInt32 key, IntPtr keyLength, void* pBuffer) {
+			IntPtr propertySize;
+			ErrorCode result;
+
+			result = OpenCL.GetPlatformInfo(this.PlatformID, key, keyLength, pBuffer, out propertySize);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("Unable to get platform info for platform " + this.PlatformID + ": " + result, result);
+		}
+		#endregion
+	}
 }

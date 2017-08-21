@@ -1,286 +1,232 @@
-﻿/*
- * Copyright (c) 2009 Olav Kalgraf(olav.kalgraf@gmail.com)
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- */
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace OpenCLNet
-{
-    public class Event : IDisposable, InteropTools.IPropertyContainer
-    {
-        #region Properties
-        
-        public IntPtr EventID { get; protected set; }
-        public Context Context { get; protected set; }
-        public CommandQueue CommandQueue { get; protected set; }
-        public ExecutionStatus ExecutionStatus { get { return (ExecutionStatus)InteropTools.ReadUInt(this, (uint)EventInfo.COMMAND_EXECUTION_STATUS); } }
-        public CommandType CommandType { get { return (CommandType)InteropTools.ReadUInt(this, (uint)EventInfo.COMMAND_TYPE); } }
+namespace OpenCLNet {
+	public class Event : IDisposable, InteropTools.IPropertyContainer {
+		private static readonly Dictionary<Int32, CallbackData> CallbackDispatch = new Dictionary<Int32, CallbackData>();
+		private static Int32 CallbackId;
+		private static readonly Mutex CallbackMutex = new Mutex();
+		private static readonly EventNotifyInternal CallbackDelegate = Event.EventCallback;
 
-        #endregion
+		// Track whether Dispose has been called.
+		private Boolean disposed;
 
-        internal class CallbackData
-        {
-            public Event EventObject;
-            public EventNotify UserMethod;
-            public object UserData;
+		private static Int32 AddCallback(Event _event, EventNotify userMethod, Object userData) {
+			Int32 callbackId;
+			var callbackData = new CallbackData(_event, userMethod, userData);
+			var gotMutex = false;
 
-            internal CallbackData(Event _event, EventNotify userMethod, object userData)
-            {
-                EventObject = _event;
-                UserMethod = userMethod;
-                UserData = userData;
-            }
-        }
+			try {
+				gotMutex = Event.CallbackMutex.WaitOne();
+				do {
+					callbackId = Event.CallbackId++;
+				} while (Event.CallbackDispatch.ContainsKey(callbackId));
+				Event.CallbackDispatch.Add(callbackId, callbackData);
+			}
+			finally {
+				if (gotMutex)
+					Event.CallbackMutex.ReleaseMutex();
+			}
+			return callbackId;
+		}
 
-        private static int CallbackId;
-        private static Mutex CallbackMutex = new Mutex();
-        private static Dictionary<int, CallbackData> CallbackDispatch = new Dictionary<int, CallbackData>();
-        private static EventNotifyInternal CallbackDelegate = new EventNotifyInternal(EventCallback);
-        private static int AddCallback(Event _event, EventNotify userMethod, object userData)
-        {
-            int callbackId;
-            CallbackData callbackData = new CallbackData(_event,userMethod,userData);
-            bool gotMutex = false;
+		private static void EventCallback(IntPtr eventId, Int32 executionStatus, IntPtr userData) {
+			var callbackId = userData.ToInt32();
+			var callbackData = Event.GetCallback(callbackId);
+			callbackData.UserMethod(callbackData.EventObject, (ExecutionStatus)executionStatus, callbackData.UserData);
+			Event.RemoveCallback(callbackId);
+		}
 
-            try
-            {
-                gotMutex = CallbackMutex.WaitOne();
-                do
-                {
-                    callbackId = CallbackId++;
-                } while (CallbackDispatch.ContainsKey(callbackId));
-                CallbackDispatch.Add(callbackId, callbackData);
-            }
-            finally
-            {
-                if (gotMutex)
-                    CallbackMutex.ReleaseMutex();
-            }
-            return callbackId;
-        }
+		private static CallbackData GetCallback(Int32 callbackId) {
+			CallbackData callbackData = null;
+			var gotMutex = false;
+			try {
+				gotMutex = Event.CallbackMutex.WaitOne();
+				callbackData = Event.CallbackDispatch[callbackId];
+			}
+			finally {
+				if (gotMutex)
+					Event.CallbackMutex.ReleaseMutex();
+			}
+			return callbackData;
+		}
 
-        private static CallbackData GetCallback(int callbackId)
-        {
-            CallbackData callbackData = null;
-            bool gotMutex = false;
-            try
-            {
-                gotMutex = CallbackMutex.WaitOne();
-                callbackData = CallbackDispatch[callbackId];
-            }
-            finally
-            {
-                if( gotMutex )
-                    CallbackMutex.ReleaseMutex();
-            }
-            return callbackData;
-        }
+		private static void RemoveCallback(Int32 callbackId) {
+			var gotMutex = false;
+			try {
+				gotMutex = Event.CallbackMutex.WaitOne();
+				Event.CallbackDispatch.Remove(callbackId);
+			}
+			finally {
+				if (gotMutex)
+					Event.CallbackMutex.ReleaseMutex();
+			}
+		}
 
-        private static void RemoveCallback(int callbackId)
-        {
-            bool gotMutex = false;
-            try
-            {
-                gotMutex = CallbackMutex.WaitOne();
-                CallbackDispatch.Remove(callbackId);
-            }
-            finally
-            {
-                if (gotMutex)
-                    CallbackMutex.ReleaseMutex();
-            }
-        }
+		public static implicit operator IntPtr(Event _event) {
+			return _event.EventID;
+		}
 
-        // Track whether Dispose has been called.
-        private bool disposed = false;
+		/// <summary>
+		///     Returns the specified profiling counter
+		/// </summary>
+		/// <param name="paramName"></param>
+		/// <param name="paramValue"></param>
+		public unsafe void GetEventProfilingInfo(ProfilingInfo paramName, out UInt64 paramValue) {
+			IntPtr paramValueSizeRet;
+			UInt64 v;
+			ErrorCode errorCode;
 
-        #region Construction / Destruction
+			errorCode = OpenCL.GetEventProfilingInfo(this.EventID, paramName, (IntPtr)sizeof(UInt64), &v, out paramValueSizeRet);
+			if (errorCode != ErrorCode.SUCCESS)
+				throw new OpenCLException("GetEventProfilingInfo failed with error code " + errorCode, errorCode);
+			paramValue = v;
+		}
 
-        internal Event( Context context, CommandQueue cq, IntPtr eventID )
-        {
-            Context = context;
-            CommandQueue = cq;
-            EventID = eventID;
-        }
+		/// <summary>
+		///     OpenCL 1.1
+		/// </summary>
+		/// <param name="command_exec_callback_type"></param>
+		/// <param name="pfn_notify"></param>
+		/// <param name="user_data"></param>
+		public void SetCallback(ExecutionStatus command_exec_callback_type, EventNotify pfn_notify, Object user_data) {
+			ErrorCode result;
+			var callbackId = Event.AddCallback(this, pfn_notify, user_data);
 
-        // Use C# destructor syntax for finalization code.
-        // This destructor will run only if the Dispose method
-        // does not get called.
-        // It gives your base class the opportunity to finalize.
-        // Do not provide destructors in types derived from this class.
-        ~Event()
-        {
-            // Do not re-create Dispose clean-up code here.
-            // Calling Dispose(false) is optimal in terms of
-            // readability and maintainability.
-            Dispose( false );
-        }
+			result = OpenCL.SetEventCallback(this.EventID, (Int32)command_exec_callback_type, Event.CallbackDelegate, (IntPtr)callbackId);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("SetEventCallback failed with error code " + result, result);
+		}
 
-        #endregion
+		/// <summary>
+		///     OpenCL 1.1
+		/// </summary>
+		/// <param name="_event"></param>
+		/// <param name="execution_status"></param>
+		public void SetUserEventStatus(ExecutionStatus execution_status) {
+			ErrorCode result;
 
-        #region IDisposable Members
+			result = OpenCL.SetUserEventStatus(this.EventID, execution_status);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("SetUserEventStatus failed with error code " + result, result);
+		}
 
-        // Implement IDisposable.
-        // Do not make this method virtual.
-        // A derived class should not be able to override this method.
-        public void Dispose()
-        {
-            Dispose( true );
-            // This object will be cleaned up by the Dispose method.
-            // Therefore, you should call GC.SupressFinalize to
-            // take this object off the finalization queue
-            // and prevent finalization code for this object
-            // from executing a second time.
-            GC.SuppressFinalize( this );
-        }
+		/// <summary>
+		///     Block the current thread until this event is completed
+		/// </summary>
+		public void Wait() {
+			this.Context.WaitForEvent(this);
+		}
 
-        // Dispose(bool disposing) executes in two distinct scenarios.
-        // If disposing equals true, the method has been called directly
-        // or indirectly by a user's code. Managed and unmanaged resources
-        // can be disposed.
-        // If disposing equals false, the method has been called by the
-        // runtime from inside the finalizer and you should not reference
-        // other objects. Only unmanaged resources can be disposed.
-        private void Dispose( bool disposing )
-        {
-            // Check to see if Dispose has already been called.
-            if( !this.disposed )
-            {
-                // If disposing equals true, dispose all managed
-                // and unmanaged resources.
-                if( disposing )
-                {
-                    // Dispose managed resources.
-                }
+		internal class CallbackData {
+			public Event EventObject;
+			public Object UserData;
+			public EventNotify UserMethod;
 
-                // Call the appropriate methods to clean up
-                // unmanaged resources here.
-                // If disposing is false,
-                // only the following code is executed.
-                OpenCL.ReleaseEvent( EventID );
-                EventID = IntPtr.Zero;
+			internal CallbackData(Event _event, EventNotify userMethod, Object userData) {
+				this.EventObject = _event;
+				this.UserMethod = userMethod;
+				this.UserData = userData;
+			}
+		}
 
-                // Note disposing has been done.
-                disposed = true;
-            }
-        }
+		#region Properties
+		public IntPtr EventID { get; protected set; }
+		public Context Context { get; protected set; }
+		public CommandQueue CommandQueue { get; protected set; }
 
-        #endregion
+		public ExecutionStatus ExecutionStatus {
+			get { return (ExecutionStatus)InteropTools.ReadUInt(this, (UInt32)EventInfo.COMMAND_EXECUTION_STATUS); }
+		}
 
-        #region IPropertyContainer Members
+		public CommandType CommandType {
+			get { return (CommandType)InteropTools.ReadUInt(this, (UInt32)EventInfo.COMMAND_TYPE); }
+		}
+		#endregion
 
-        unsafe public IntPtr GetPropertySize( uint key )
-        {
-            IntPtr size;
-            ErrorCode result;
+		#region Construction / Destruction
+		internal Event(Context context, CommandQueue cq, IntPtr eventID) {
+			this.Context = context;
+			this.CommandQueue = cq;
+			this.EventID = eventID;
+		}
 
-            result = (ErrorCode)OpenCL.GetEventInfo( EventID, key, IntPtr.Zero, null, out size );
-            if( result!=ErrorCode.SUCCESS )
-                throw new OpenCLException( "GetEventInfo failed; "+result, result);
-            return size;
-        }
+		// Use C# destructor syntax for finalization code.
+		// This destructor will run only if the Dispose method
+		// does not get called.
+		// It gives your base class the opportunity to finalize.
+		// Do not provide destructors in types derived from this class.
+		~Event() {
+			// Do not re-create Dispose clean-up code here.
+			// Calling Dispose(false) is optimal in terms of
+			// readability and maintainability.
+			this.Dispose(false);
+		}
+		#endregion
 
-        unsafe public void ReadProperty( uint key, IntPtr keyLength, void* pBuffer )
-        {
-            IntPtr size;
-            ErrorCode result;
+		#region IDisposable Members
+		// Implement IDisposable.
+		// Do not make this method virtual.
+		// A derived class should not be able to override this method.
+		public void Dispose() {
+			this.Dispose(true);
+			// This object will be cleaned up by the Dispose method.
+			// Therefore, you should call GC.SupressFinalize to
+			// take this object off the finalization queue
+			// and prevent finalization code for this object
+			// from executing a second time.
+			GC.SuppressFinalize(this);
+		}
 
-            result = (ErrorCode)OpenCL.GetEventInfo( EventID, key, keyLength, pBuffer, out size );
-            if( result!=ErrorCode.SUCCESS )
-                throw new OpenCLException( "GetEventInfo failed; "+result, result);
-        }
+		// Dispose(bool disposing) executes in two distinct scenarios.
+		// If disposing equals true, the method has been called directly
+		// or indirectly by a user's code. Managed and unmanaged resources
+		// can be disposed.
+		// If disposing equals false, the method has been called by the
+		// runtime from inside the finalizer and you should not reference
+		// other objects. Only unmanaged resources can be disposed.
+		private void Dispose(Boolean disposing) {
+			// Check to see if Dispose has already been called.
+			if (!this.disposed) {
+				// If disposing equals true, dispose all managed
+				// and unmanaged resources.
+				if (disposing) {
+					// Dispose managed resources.
+				}
 
-        #endregion
+				// Call the appropriate methods to clean up
+				// unmanaged resources here.
+				// If disposing is false,
+				// only the following code is executed.
+				OpenCL.ReleaseEvent(this.EventID);
+				this.EventID = IntPtr.Zero;
 
-        /// <summary>
-        /// Block the current thread until this event is completed
-        /// </summary>
-        public void Wait()
-        {
-            Context.WaitForEvent(this);
-        }
+				// Note disposing has been done.
+				this.disposed = true;
+			}
+		}
+		#endregion
 
-        /// <summary>
-        /// OpenCL 1.1
-        /// </summary>
-        /// <param name="_event"></param>
-        /// <param name="execution_status"></param>
-        public void SetUserEventStatus(ExecutionStatus execution_status)
-        {
-            ErrorCode result;
+		#region IPropertyContainer Members
+		unsafe public IntPtr GetPropertySize(UInt32 key) {
+			IntPtr size;
+			ErrorCode result;
 
-            result = OpenCL.SetUserEventStatus(EventID, execution_status);
-            if (result != ErrorCode.SUCCESS)
-                throw new OpenCLException("SetUserEventStatus failed with error code " + result, result);
-        }
+			result = OpenCL.GetEventInfo(this.EventID, key, IntPtr.Zero, null, out size);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("GetEventInfo failed; " + result, result);
+			return size;
+		}
 
-        /// <summary>
-        /// OpenCL 1.1
-        /// </summary>
-        /// <param name="command_exec_callback_type"></param>
-        /// <param name="pfn_notify"></param>
-        /// <param name="user_data"></param>
-        public void SetCallback(ExecutionStatus command_exec_callback_type, EventNotify pfn_notify, object user_data)
-        {
-            ErrorCode result;
-            int callbackId = AddCallback(this,pfn_notify, user_data);
+		unsafe public void ReadProperty(UInt32 key, IntPtr keyLength, void* pBuffer) {
+			IntPtr size;
+			ErrorCode result;
 
-            result = OpenCL.SetEventCallback(EventID, (int)command_exec_callback_type, CallbackDelegate, (IntPtr)callbackId);
-            if (result != ErrorCode.SUCCESS)
-                throw new OpenCLException("SetEventCallback failed with error code " + result, result);
-        }
-
-        private static void EventCallback(IntPtr eventId, int executionStatus, IntPtr userData)
-        {
-            int callbackId = userData.ToInt32();
-            CallbackData callbackData = GetCallback(callbackId);
-            callbackData.UserMethod(callbackData.EventObject, (ExecutionStatus)executionStatus, callbackData.UserData);
-            RemoveCallback(callbackId);
-        }
-
-        /// <summary>
-        /// Returns the specified profiling counter
-        /// </summary>
-        /// <param name="paramName"></param>
-        /// <param name="paramValue"></param>
-        public unsafe void GetEventProfilingInfo(ProfilingInfo paramName, out ulong paramValue)
-        {
-            IntPtr paramValueSizeRet;
-            ulong v;
-            ErrorCode errorCode;
-
-            errorCode = OpenCL.GetEventProfilingInfo(EventID, paramName, (IntPtr)sizeof(ulong), &v, out paramValueSizeRet);
-            if (errorCode != ErrorCode.SUCCESS)
-                throw new OpenCLException("GetEventProfilingInfo failed with error code "+errorCode, errorCode );
-            paramValue = v;
-        }
-
-        public static implicit operator IntPtr( Event _event )
-        {
-            return _event.EventID;
-        }
-    }
+			result = OpenCL.GetEventInfo(this.EventID, key, keyLength, pBuffer, out size);
+			if (result != ErrorCode.SUCCESS)
+				throw new OpenCLException("GetEventInfo failed; " + result, result);
+		}
+		#endregion
+	}
 }
