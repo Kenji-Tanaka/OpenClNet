@@ -14,7 +14,7 @@ namespace OpenCLNet {
 	///     Note that pointer arguments are set by passing their OpenCL memory object,
 	///     not native pointers.
 	/// </summary>
-	public unsafe class Kernel : InteropTools.IPropertyContainer {
+	public unsafe class Kernel : InteropTools.IPropertyContainer, IDisposable {
 		// Track whether Dispose has been called.
 		private Boolean disposed;
 
@@ -820,163 +820,146 @@ namespace OpenCLNet {
 		}
 		#endregion
 
-#if false // Have to add some endian checking before compiling these into the library
+		#region Set Char vectors
 
-        #region Set Char vectors
-        
-        public void SetChar2Arg(int argIndex, sbyte s0, sbyte s1)
-        {
-            sbyte* pBuffer = stackalloc sbyte[2];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            SetArg(argIndex, (IntPtr)(sizeof(sbyte) * 2), (IntPtr)pBuffer);
-        }
+		public void SetChar2Arg(int argIndex, sbyte s0, sbyte s1) {
+			sbyte* pBuffer = stackalloc sbyte[2];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			SetArg(argIndex, (IntPtr)(sizeof(sbyte) * 2), (IntPtr)pBuffer);
+		}
 
-        public void SetChar4Arg(int argIndex, sbyte s0, sbyte s1, sbyte s2, sbyte s3)
-        {
-            sbyte* pBuffer = stackalloc sbyte[4];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            pBuffer[2] = s2;
-            pBuffer[3] = s3;
-            SetArg(argIndex, (IntPtr)(sizeof(sbyte) * 4), (IntPtr)pBuffer);
-        }
+		public void SetChar4Arg(int argIndex, sbyte s0, sbyte s1, sbyte s2, sbyte s3) {
+			sbyte* pBuffer = stackalloc sbyte[4];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			pBuffer[2] = s2;
+			pBuffer[3] = s3;
+			SetArg(argIndex, (IntPtr)(sizeof(sbyte) * 4), (IntPtr)pBuffer);
+		}
 
-        #endregion
-        
-        #region Set UChar vectors
+		#endregion
 
-        public void SetUChar2Arg(int argIndex, byte s0, byte s1)
-        {
-            byte* pBuffer = stackalloc byte[2];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            SetArg(argIndex, (IntPtr)(sizeof(byte) * 2), (IntPtr)pBuffer);
-        }
+		#region Set UChar vectors
 
-        public void SetUChar4Arg(int argIndex, byte s0, byte s1, byte s2, byte s3)
-        {
-            byte* pBuffer = stackalloc byte[4];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            pBuffer[2] = s2;
-            pBuffer[3] = s3;
-            SetArg(argIndex, (IntPtr)(sizeof(byte) * 4), (IntPtr)pBuffer);
-        }
+		public void SetUChar2Arg(int argIndex, byte s0, byte s1) {
+			byte* pBuffer = stackalloc byte[2];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			SetArg(argIndex, (IntPtr)(sizeof(byte) * 2), (IntPtr)pBuffer);
+		}
 
-        #endregion
+		public void SetUChar4Arg(int argIndex, byte s0, byte s1, byte s2, byte s3) {
+			byte* pBuffer = stackalloc byte[4];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			pBuffer[2] = s2;
+			pBuffer[3] = s3;
+			SetArg(argIndex, (IntPtr)(sizeof(byte) * 4), (IntPtr)pBuffer);
+		}
 
-        #region Set Int vectors
+		#endregion
 
-        public void SetInt2Arg(int argIndex, int s0, int s1)
-        {
-            int* pBuffer = stackalloc int[2];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            SetArg(argIndex, (IntPtr)(sizeof(int) * 2), (IntPtr)pBuffer);
-        }
+		#region Set Int vectors
 
-        public void SetInt4Arg(int argIndex, int s0, int s1, int s2, int s3)
-        {
-            int* pBuffer = stackalloc int[4];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            pBuffer[2] = s2;
-            pBuffer[3] = s3;
-            SetArg(argIndex, (IntPtr)(sizeof(int) * 4), (IntPtr)pBuffer);
-        }
+		public void SetInt2Arg(int argIndex, int s0, int s1) {
+			int* pBuffer = stackalloc int[2];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			SetArg(argIndex, (IntPtr)(sizeof(int) * 2), (IntPtr)pBuffer);
+		}
 
-        #endregion
+		public void SetInt4Arg(int argIndex, int s0, int s1, int s2, int s3) {
+			int* pBuffer = stackalloc int[4];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			pBuffer[2] = s2;
+			pBuffer[3] = s3;
+			SetArg(argIndex, (IntPtr)(sizeof(int) * 4), (IntPtr)pBuffer);
+		}
 
-        #region Set UInt vectors
+		#endregion
 
-        public void SetUInt2Arg(int argIndex, uint s0, uint s1)
-        {
-            uint* pBuffer = stackalloc uint[2];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            SetArg(argIndex, (IntPtr)(sizeof(uint) * 2), (IntPtr)pBuffer);
-        }
+		#region Set UInt vectors
 
-        public void SetUInt4Arg(int argIndex, uint s0, uint s1, uint s2, uint s3)
-        {
-            uint* pBuffer = stackalloc uint[4];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            pBuffer[2] = s2;
-            pBuffer[3] = s3;
-            SetArg(argIndex, (IntPtr)(sizeof(uint) * 4), (IntPtr)pBuffer);
-        }
+		public void SetUInt2Arg(int argIndex, uint s0, uint s1) {
+			uint* pBuffer = stackalloc uint[2];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			SetArg(argIndex, (IntPtr)(sizeof(uint) * 2), (IntPtr)pBuffer);
+		}
 
-        #endregion
+		public void SetUInt4Arg(int argIndex, uint s0, uint s1, uint s2, uint s3) {
+			uint* pBuffer = stackalloc uint[4];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			pBuffer[2] = s2;
+			pBuffer[3] = s3;
+			SetArg(argIndex, (IntPtr)(sizeof(uint) * 4), (IntPtr)pBuffer);
+		}
 
-        #region Set Long vectors
+		#endregion
 
-        public void SetLong2Arg(int argIndex, long s0, long s1)
-        {
-            long* pBuffer = stackalloc long[2];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            SetArg(argIndex, (IntPtr)(sizeof(long) * 2), (IntPtr)pBuffer);
-        }
+		#region Set Long vectors
 
-        public void SetLong4Arg(int argIndex, long s0, long s1, long s2, long s3)
-        {
-            long* pBuffer = stackalloc long[4];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            pBuffer[2] = s2;
-            pBuffer[3] = s3;
-            SetArg(argIndex, (IntPtr)(sizeof(long) * 4), (IntPtr)pBuffer);
-        }
+		public void SetLong2Arg(int argIndex, long s0, long s1) {
+			long* pBuffer = stackalloc long[2];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			SetArg(argIndex, (IntPtr)(sizeof(long) * 2), (IntPtr)pBuffer);
+		}
 
-        #endregion
+		public void SetLong4Arg(int argIndex, long s0, long s1, long s2, long s3) {
+			long* pBuffer = stackalloc long[4];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			pBuffer[2] = s2;
+			pBuffer[3] = s3;
+			SetArg(argIndex, (IntPtr)(sizeof(long) * 4), (IntPtr)pBuffer);
+		}
 
-        #region Set ULong vectors
+		#endregion
 
-        public void SetULong2Arg(int argIndex, ulong s0, ulong s1)
-        {
-            ulong* pBuffer = stackalloc ulong[2];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            SetArg(argIndex, (IntPtr)(sizeof(ulong) * 2), (IntPtr)pBuffer);
-        }
+		#region Set ULong vectors
 
-        public void SetULong4Arg(int argIndex, ulong s0, ulong s1, ulong s2, ulong s3)
-        {
-            ulong* pBuffer = stackalloc ulong[4];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            pBuffer[2] = s2;
-            pBuffer[3] = s3;
-            SetArg(argIndex, (IntPtr)(sizeof(ulong) * 4), (IntPtr)pBuffer);
-        }
+		public void SetULong2Arg(int argIndex, ulong s0, ulong s1) {
+			ulong* pBuffer = stackalloc ulong[2];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			SetArg(argIndex, (IntPtr)(sizeof(ulong) * 2), (IntPtr)pBuffer);
+		}
 
-        #endregion
+		public void SetULong4Arg(int argIndex, ulong s0, ulong s1, ulong s2, ulong s3) {
+			ulong* pBuffer = stackalloc ulong[4];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			pBuffer[2] = s2;
+			pBuffer[3] = s3;
+			SetArg(argIndex, (IntPtr)(sizeof(ulong) * 4), (IntPtr)pBuffer);
+		}
 
-        #region Set Float vectors
+		#endregion
 
-        public void SetFloat2Arg(int argIndex, float s0, float s1)
-        {
-            float* pBuffer = stackalloc float[2];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            SetArg(argIndex, (IntPtr)(sizeof(float) * 2), (IntPtr)pBuffer);
-        }
+		#region Set Float vectors
 
-        public void SetFloat4Arg(int argIndex, float s0, float s1, float s2, float s3)
-        {
-            float* pBuffer = stackalloc float[4];
-            pBuffer[0] = s0;
-            pBuffer[1] = s1;
-            pBuffer[2] = s2;
-            pBuffer[3] = s3;
-            SetArg(argIndex, (IntPtr)(sizeof(float) * 4), (IntPtr)pBuffer);
-        }
+		public void SetFloat2Arg(int argIndex, float s0, float s1) {
+			float* pBuffer = stackalloc float[2];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			SetArg(argIndex, (IntPtr)(sizeof(float) * 2), (IntPtr)pBuffer);
+		}
 
-        #endregion
+		public void SetFloat4Arg(int argIndex, float s0, float s1, float s2, float s3) {
+			float* pBuffer = stackalloc float[4];
+			pBuffer[0] = s0;
+			pBuffer[1] = s1;
+			pBuffer[2] = s2;
+			pBuffer[3] = s3;
+			SetArg(argIndex, (IntPtr)(sizeof(float) * 4), (IntPtr)pBuffer);
+		}
 
-#endif
+		#endregion
+
 		public static implicit operator IntPtr(Kernel k) {
 			return k.KernelID;
 		}
