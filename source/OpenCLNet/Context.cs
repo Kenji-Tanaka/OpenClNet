@@ -2,7 +2,7 @@
 using System.IO;
 
 namespace OpenCLNet {
-	unsafe public class Context : IDisposable, InteropTools.IPropertyContainer {
+	public unsafe class Context : IDisposable, InteropTools.IPropertyContainer {
 		// Track whether Dispose has been called.
 		private Boolean disposed;
 		public IntPtr ContextID { get; protected set; }
@@ -142,9 +142,7 @@ namespace OpenCLNet {
 		#endregion
 
 		#region Properties
-		public UInt32 ReferenceCount {
-			get { return InteropTools.ReadUInt(this, (UInt32)ContextInfo.REFERENCE_COUNT); }
-		}
+		public UInt32 ReferenceCount => InteropTools.ReadUInt(this, (UInt32)ContextInfo.REFERENCE_COUNT);
 
 		public Device[] Devices {
 			get {
@@ -166,9 +164,7 @@ namespace OpenCLNet {
 			}
 		}
 
-		public ContextProperties[] Properties {
-			get { throw new NotImplementedException(); }
-		}
+		public ContextProperties[] Properties => throw new NotImplementedException();
 		#endregion
 
 		#region Create Command Queue

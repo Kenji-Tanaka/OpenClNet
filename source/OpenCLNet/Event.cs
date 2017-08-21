@@ -136,13 +136,9 @@ namespace OpenCLNet {
 		public Context Context { get; protected set; }
 		public CommandQueue CommandQueue { get; protected set; }
 
-		public ExecutionStatus ExecutionStatus {
-			get { return (ExecutionStatus)InteropTools.ReadUInt(this, (UInt32)EventInfo.COMMAND_EXECUTION_STATUS); }
-		}
+		public ExecutionStatus ExecutionStatus => (ExecutionStatus)InteropTools.ReadUInt(this, (UInt32)EventInfo.COMMAND_EXECUTION_STATUS);
 
-		public CommandType CommandType {
-			get { return (CommandType)InteropTools.ReadUInt(this, (UInt32)EventInfo.COMMAND_TYPE); }
-		}
+		public CommandType CommandType => (CommandType)InteropTools.ReadUInt(this, (UInt32)EventInfo.COMMAND_TYPE);
 		#endregion
 
 		#region Construction / Destruction
@@ -209,7 +205,7 @@ namespace OpenCLNet {
 		#endregion
 
 		#region IPropertyContainer Members
-		unsafe public IntPtr GetPropertySize(UInt32 key) {
+		public unsafe IntPtr GetPropertySize(UInt32 key) {
 			IntPtr size;
 			ErrorCode result;
 
@@ -219,7 +215,7 @@ namespace OpenCLNet {
 			return size;
 		}
 
-		unsafe public void ReadProperty(UInt32 key, IntPtr keyLength, void* pBuffer) {
+		public unsafe void ReadProperty(UInt32 key, IntPtr keyLength, void* pBuffer) {
 			IntPtr size;
 			ErrorCode result;
 

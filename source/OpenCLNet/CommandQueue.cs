@@ -9,20 +9,16 @@ namespace OpenCLNet {
 	///     a command queue as their first parameter. Most notably, all the Enqueue() functions.
 	///     In effect, it makes this class into the workhorse of most OpenCL applications.
 	/// </summary>
-	unsafe public class CommandQueue : IDisposable {
+	public unsafe class CommandQueue : IDisposable {
 		// Track whether Dispose has been called.
 		private Boolean disposed;
 		public IntPtr CommandQueueID { get; private set; }
 		public Context Context { get; }
 		public Device Device { get; }
 
-		public CommandQueueProperties Properties {
-			get { return 0; }
-		}
+		public CommandQueueProperties Properties => 0;
 
-		public UInt32 ReferenceCount {
-			get { return 0; }
-		}
+		public UInt32 ReferenceCount => 0;
 
 		public static implicit operator IntPtr(CommandQueue cq) {
 			return cq.CommandQueueID;

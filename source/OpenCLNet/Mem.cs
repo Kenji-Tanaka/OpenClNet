@@ -1,46 +1,30 @@
 ﻿using System;
 
 namespace OpenCLNet {
-	unsafe public class Mem : IDisposable, InteropTools.IPropertyContainer {
+	public unsafe class Mem : IDisposable, InteropTools.IPropertyContainer {
 		// Track whether Dispose has been called.
 		private Boolean disposed;
 
 		private readonly TextureInfo TxInfo;
 		public Context Context { get; protected set; }
 
-		public IntPtr HostPtr {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)MemInfo.HOST_PTR); }
-		}
+		public IntPtr HostPtr => InteropTools.ReadIntPtr(this, (UInt32)MemInfo.HOST_PTR);
 
-		public UInt32 MapCount {
-			get { return InteropTools.ReadUInt(this, (UInt32)MemInfo.MAP_COUNT); }
-		}
+		public UInt32 MapCount => InteropTools.ReadUInt(this, (UInt32)MemInfo.MAP_COUNT);
 
-		public MemFlags MemFlags {
-			get { return (MemFlags)InteropTools.ReadULong(this, (UInt32)MemInfo.FLAGS); }
-		}
+		public MemFlags MemFlags => (MemFlags)InteropTools.ReadULong(this, (UInt32)MemInfo.FLAGS);
 
 		public IntPtr MemID { get; protected set; }
 
-		public IntPtr MemSize {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)MemInfo.SIZE); }
-		}
+		public IntPtr MemSize => InteropTools.ReadIntPtr(this, (UInt32)MemInfo.SIZE);
 
-		public MemObjectType MemType {
-			get { return (MemObjectType)InteropTools.ReadUInt(this, (UInt32)MemInfo.TYPE); }
-		}
+		public MemObjectType MemType => (MemObjectType)InteropTools.ReadUInt(this, (UInt32)MemInfo.TYPE);
 
-		public Int32 MipMapLevel {
-			get { return InteropTools.ReadInt(this.TxInfo, (UInt32)CLGLTextureInfo.MIPMAP_LEVEL); }
-		}
+		public Int32 MipMapLevel => InteropTools.ReadInt(this.TxInfo, (UInt32)CLGLTextureInfo.MIPMAP_LEVEL);
 
-		public UInt32 ReferenceCount {
-			get { return InteropTools.ReadUInt(this, (UInt32)MemInfo.REFERENCE_COUNT); }
-		}
+		public UInt32 ReferenceCount => InteropTools.ReadUInt(this, (UInt32)MemInfo.REFERENCE_COUNT);
 
-		public UInt32 TextureTarget {
-			get { return InteropTools.ReadUInt(this.TxInfo, (UInt32)CLGLTextureInfo.TEXTURE_TARGET); }
-		}
+		public UInt32 TextureTarget => InteropTools.ReadUInt(this.TxInfo, (UInt32)CLGLTextureInfo.TEXTURE_TARGET);
 
 		public static implicit operator IntPtr(Mem m) {
 			return m.MemID;

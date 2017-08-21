@@ -4,7 +4,7 @@ namespace OpenCLNet {
 	/// <summary>
 	///     Wrapper for an OpenCL sampler
 	/// </summary>
-	unsafe public class Sampler : IDisposable, InteropTools.IPropertyContainer {
+	public unsafe class Sampler : IDisposable, InteropTools.IPropertyContainer {
 		// Track whether Dispose has been called.
 		private Boolean disposed;
 
@@ -12,21 +12,13 @@ namespace OpenCLNet {
 		public IntPtr SamplerID { get; protected set; }
 		public Context Context { get; protected set; }
 
-		public UInt32 ReferenceCount {
-			get { return InteropTools.ReadUInt(this, (UInt32)SamplerInfo.REFERENCE_COUNT); }
-		}
+		public UInt32 ReferenceCount => InteropTools.ReadUInt(this, (UInt32)SamplerInfo.REFERENCE_COUNT);
 
-		public AddressingMode AddressingMode {
-			get { return (AddressingMode)InteropTools.ReadUInt(this, (UInt32)SamplerInfo.ADDRESSING_MODE); }
-		}
+		public AddressingMode AddressingMode => (AddressingMode)InteropTools.ReadUInt(this, (UInt32)SamplerInfo.ADDRESSING_MODE);
 
-		public FilterMode FilterMode {
-			get { return (FilterMode)InteropTools.ReadUInt(this, (UInt32)SamplerInfo.FILTER_MODE); }
-		}
+		public FilterMode FilterMode => (FilterMode)InteropTools.ReadUInt(this, (UInt32)SamplerInfo.FILTER_MODE);
 
-		public Boolean NormalizedCoords {
-			get { return InteropTools.ReadBool(this, (UInt32)SamplerInfo.NORMALIZED_COORDS); }
-		}
+		public Boolean NormalizedCoords => InteropTools.ReadBool(this, (UInt32)SamplerInfo.NORMALIZED_COORDS);
 		#endregion
 
 		#region Construction / Destruction

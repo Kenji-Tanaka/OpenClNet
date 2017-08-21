@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace OpenCLNet {
-	unsafe public class Platform : InteropTools.IPropertyContainer {
+	public unsafe class Platform : InteropTools.IPropertyContainer {
 		readonly IntPtr[] DeviceIDs;
 		Device[] DeviceList;
 
@@ -17,16 +17,12 @@ namespace OpenCLNet {
 		///     Note that this class has some support functions to help query extension capbilities.
 		///     This property is only present for completeness.
 		/// </summary>
-		public String Extensions {
-			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.EXTENSIONS); }
-		}
+		public String Extensions => InteropTools.ReadString(this, (UInt32)PlatformInfo.EXTENSIONS);
 
 		/// <summary>
 		///     Platform name string
 		/// </summary>
-		public String Name {
-			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.NAME); }
-		}
+		public String Name => InteropTools.ReadString(this, (UInt32)PlatformInfo.NAME);
 
 		/// <summary>
 		///     Convenience method to get at the major_version field in the Version string
@@ -42,24 +38,18 @@ namespace OpenCLNet {
 		///     Equal to "FULL_PROFILE" if the implementation supports the OpenCL specification or
 		///     "EMBEDDED_PROFILE" if the implementation supports the OpenCL embedded profile.
 		/// </summary>
-		public String Profile {
-			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.PROFILE); }
-		}
+		public String Profile => InteropTools.ReadString(this, (UInt32)PlatformInfo.PROFILE);
 
 		/// <summary>
 		///     Platform Vendor string
 		/// </summary>
-		public String Vendor {
-			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.VENDOR); }
-		}
+		public String Vendor => InteropTools.ReadString(this, (UInt32)PlatformInfo.VENDOR);
 
 		/// <summary>
 		///     OpenCL version string. Returns the OpenCL version supported by the implementation. This version string
 		///     has the following format: OpenCL&lt;space&gt;&lt;major_version.minor_version&gt;&lt;space&gt;&lt;platform specific information&gt;
 		/// </summary>
-		public String Version {
-			get { return InteropTools.ReadString(this, (UInt32)PlatformInfo.VERSION); }
-		}
+		public String Version => InteropTools.ReadString(this, (UInt32)PlatformInfo.VERSION);
 
 		public Platform(IntPtr platformID) {
 			this.PlatformID = platformID;

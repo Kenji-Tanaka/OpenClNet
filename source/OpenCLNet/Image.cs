@@ -17,29 +17,17 @@ namespace OpenCLNet {
 			}
 		}
 
-		public IntPtr ElementSize {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.ELEMENT_SIZE); }
-		}
+		public IntPtr ElementSize => InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.ELEMENT_SIZE);
 
-		public IntPtr RowPitch {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.ROW_PITCH); }
-		}
+		public IntPtr RowPitch => InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.ROW_PITCH);
 
-		public IntPtr SlicePitch {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.SLICE_PITCH); }
-		}
+		public IntPtr SlicePitch => InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.SLICE_PITCH);
 
-		public IntPtr Width {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.WIDTH); }
-		}
+		public IntPtr Width => InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.WIDTH);
 
-		public IntPtr Height {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.HEIGHT); }
-		}
+		public IntPtr Height => InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.HEIGHT);
 
-		public IntPtr Depth {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.DEPTH); }
-		}
+		public IntPtr Depth => InteropTools.ReadIntPtr(this, (UInt32)ImageInfo.DEPTH);
 		#endregion
 
 		// Override the IPropertyContainer interface of the Mem class.

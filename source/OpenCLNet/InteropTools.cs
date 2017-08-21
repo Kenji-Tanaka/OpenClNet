@@ -75,7 +75,7 @@ namespace OpenCLNet {
 			return eventIDs;
 		}
 
-		public unsafe static void ConvertEventsToEventIDs(Int32 num, Event[] events, IntPtr* pHandles) {
+		public static unsafe void ConvertEventsToEventIDs(Int32 num, Event[] events, IntPtr* pHandles) {
 			if (events == null)
 				return;
 			if (num > events.Length)
@@ -170,7 +170,7 @@ namespace OpenCLNet {
 			return InteropTools.ReadUInt(propertyContainer, key) == (UInt32)Bool.TRUE ? true : false;
 		}
 
-		unsafe public static Byte[] ReadBytes(IPropertyContainer propertyContainer, UInt32 key) {
+		public static unsafe Byte[] ReadBytes(IPropertyContainer propertyContainer, UInt32 key) {
 			IntPtr size;
 
 			size = propertyContainer.GetPropertySize(key);
@@ -181,7 +181,7 @@ namespace OpenCLNet {
 			return data;
 		}
 
-		unsafe public static String ReadString(IPropertyContainer propertyContainer, UInt32 key) {
+		public static unsafe String ReadString(IPropertyContainer propertyContainer, UInt32 key) {
 			IntPtr size;
 			String s;
 
@@ -199,42 +199,42 @@ namespace OpenCLNet {
 				return s;
 		}
 
-		unsafe public static Int32 ReadInt(IPropertyContainer propertyContainer, UInt32 key) {
+		public static unsafe Int32 ReadInt(IPropertyContainer propertyContainer, UInt32 key) {
 			Int32 output;
 
 			propertyContainer.ReadProperty(key, new IntPtr(sizeof(Int32)), &output);
 			return output;
 		}
 
-		unsafe public static UInt32 ReadUInt(IPropertyContainer propertyContainer, UInt32 key) {
+		public static unsafe UInt32 ReadUInt(IPropertyContainer propertyContainer, UInt32 key) {
 			UInt32 output;
 
 			propertyContainer.ReadProperty(key, new IntPtr(sizeof(UInt32)), &output);
 			return output;
 		}
 
-		unsafe public static Int64 ReadLong(IPropertyContainer propertyContainer, UInt32 key) {
+		public static unsafe Int64 ReadLong(IPropertyContainer propertyContainer, UInt32 key) {
 			Int64 output;
 
 			propertyContainer.ReadProperty(key, new IntPtr(sizeof(Int64)), &output);
 			return output;
 		}
 
-		unsafe public static UInt64 ReadULong(IPropertyContainer propertyContainer, UInt32 key) {
+		public static unsafe UInt64 ReadULong(IPropertyContainer propertyContainer, UInt32 key) {
 			UInt64 output;
 
 			propertyContainer.ReadProperty(key, new IntPtr(sizeof(UInt64)), &output);
 			return output;
 		}
 
-		unsafe public static IntPtr ReadIntPtr(IPropertyContainer propertyContainer, UInt32 key) {
+		public static unsafe IntPtr ReadIntPtr(IPropertyContainer propertyContainer, UInt32 key) {
 			IntPtr output;
 
 			propertyContainer.ReadProperty(key, new IntPtr(sizeof(IntPtr)), &output);
 			return output;
 		}
 
-		unsafe public static IntPtr[] ReadIntPtrArray(IPropertyContainer propertyContainer, UInt32 key) {
+		public static unsafe IntPtr[] ReadIntPtrArray(IPropertyContainer propertyContainer, UInt32 key) {
 			var size = propertyContainer.GetPropertySize(key);
 			var numElements = (Int64)size / sizeof(IntPtr);
 			var ptrs = new IntPtr[numElements];
@@ -248,7 +248,7 @@ namespace OpenCLNet {
 			return ptrs;
 		}
 
-		unsafe public static void ReadPreAllocatedBytePtrArray(IPropertyContainer propertyContainer, UInt32 key, Byte[][] buffers) {
+		public static unsafe void ReadPreAllocatedBytePtrArray(IPropertyContainer propertyContainer, UInt32 key, Byte[][] buffers) {
 			var pinnedArrays = new GCHandle[buffers.Length];
 
 			// Pin arrays

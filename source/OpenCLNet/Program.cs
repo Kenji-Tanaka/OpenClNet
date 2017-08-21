@@ -5,7 +5,7 @@ namespace OpenCLNet {
 	/// <summary>
 	///     Wrapper for an OpenCL Program
 	/// </summary>
-	unsafe public class Program : IDisposable, InteropTools.IPropertyContainer {
+	public unsafe class Program : IDisposable, InteropTools.IPropertyContainer {
 		// Track whether Dispose has been called.
 		private Boolean disposed;
 
@@ -27,15 +27,13 @@ namespace OpenCLNet {
 		}
 
 		public void Build(Device[] devices, String options, ProgramNotify notify, IntPtr userData) {
-			ErrorCode result;
-			IntPtr[] deviceIDs;
 			var deviceLength = 0;
 
 			if (devices != null)
 				deviceLength = devices.Length;
 
-			deviceIDs = InteropTools.ConvertDevicesToDeviceIDs(devices);
-			result = OpenCL.BuildProgram(this.ProgramID,
+			var deviceIDs = InteropTools.ConvertDevicesToDeviceIDs(devices);
+			var result = OpenCL.BuildProgram(this.ProgramID,
 				(UInt32)deviceLength,
 				deviceIDs,
 				options,
@@ -76,9 +74,8 @@ namespace OpenCLNet {
 		/// <returns></returns>
 		public Kernel[] CreateKernels() {
 			UInt32 numKernels;
-			ErrorCode result;
 
-			result = OpenCL.CreateKernelsInProgram(this.ProgramID, 0, null, out numKernels);
+			var result = OpenCL.CreateKernelsInProgram(this.ProgramID, 0, null, out numKernels);
 			if (result != ErrorCode.SUCCESS)
 				throw new OpenCLException("CreateKernels failed with error code " + result, result);
 
@@ -94,23 +91,17 @@ namespace OpenCLNet {
 		}
 
 		public String GetBuildLog(Device device) {
-			BuildInfo buildInfo;
-
-			buildInfo = new BuildInfo(this, device);
+			var buildInfo = new BuildInfo(this, device);
 			return InteropTools.ReadString(buildInfo, (UInt32)ProgramBuildInfo.LOG);
 		}
 
 		public String GetBuildOptions(Device device) {
-			BuildInfo buildInfo;
-
-			buildInfo = new BuildInfo(this, device);
+			var buildInfo = new BuildInfo(this, device);
 			return InteropTools.ReadString(buildInfo, (UInt32)ProgramBuildInfo.OPTIONS);
 		}
 
 		public BuildStatus GetBuildStatus(Device device) {
-			BuildInfo buildInfo;
-
-			buildInfo = new BuildInfo(this, device);
+			var buildInfo = new BuildInfo(this, device);
 			return (BuildStatus)InteropTools.ReadInt(buildInfo, (UInt32)ProgramBuildInfo.STATUS);
 		}
 
@@ -118,7 +109,7 @@ namespace OpenCLNet {
 			this.Dispose(false);
 		}
 
-		class BuildInfo : InteropTools.IPropertyContainer {
+		sealed class BuildInfo : InteropTools.IPropertyContainer {
 			readonly Device Device;
 			readonly Program Program;
 
@@ -154,17 +145,11 @@ namespace OpenCLNet {
 		public Context Context { get; protected set; }
 		public IntPtr ProgramID { get; protected set; }
 
-		public String Source {
-			get { return InteropTools.ReadString(this, (UInt32)ProgramInfo.SOURCE); }
-		}
+		public String Source => InteropTools.ReadString(this, (UInt32)ProgramInfo.SOURCE);
 
-		public UInt32 ReferenceCount {
-			get { return InteropTools.ReadUInt(this, (UInt32)ProgramInfo.REFERENCE_COUNT); }
-		}
+		public UInt32 ReferenceCount => InteropTools.ReadUInt(this, (UInt32)ProgramInfo.REFERENCE_COUNT);
 
-		public UInt32 NumDevices {
-			get { return InteropTools.ReadUInt(this, (UInt32)ProgramInfo.NUM_DEVICES); }
-		}
+		public UInt32 NumDevices => InteropTools.ReadUInt(this, (UInt32)ProgramInfo.NUM_DEVICES);
 
 		public Device[] Devices {
 			get {

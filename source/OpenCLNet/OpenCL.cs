@@ -18,7 +18,6 @@ namespace OpenCLNet {
 	using cl_kernel = IntPtr;
 	using cl_mem = IntPtr;
 	using cl_mem_flags = UInt64;
-	using cl_program = IntPtr;
 	using cl_sampler = IntPtr;
 	using cl_sampler_info = UInt32;
 	using cl_uint = UInt32;
@@ -27,27 +26,12 @@ namespace OpenCLNet {
 	using GLuint = UInt32;
 	#endregion
 
-	public delegate void ContextNotify(String errInfo, Byte[] data, IntPtr cb, IntPtr userData);
-
-	public delegate void ProgramNotify(cl_program program, IntPtr userData);
-
-	unsafe public delegate void NativeKernel(Object o, void*[] pBuffers);
-
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	unsafe public delegate void NativeKernelInternal(void* pArgs);
-
-	public delegate void EventNotify(Event _event, ExecutionStatus eventCommandExecStatus, Object userData);
-
-	public delegate void EventNotifyInternal(cl_event _event, cl_int eventCommandExecStatus, IntPtr userData);
-
-	public unsafe static class OpenCL {
+	public static unsafe class OpenCL {
 		static readonly Dictionary<IntPtr, Platform> _Platforms = new Dictionary<IntPtr, Platform>();
 		static IntPtr[] PlatformIDs;
 		static Platform[] Platforms;
 
-		public static Int32 NumberOfPlatforms {
-			get { return OpenCL._Platforms.Count; }
-		}
+		public static Int32 NumberOfPlatforms => OpenCL._Platforms.Count;
 
 		static OpenCL() {
 			try {
@@ -60,7 +44,7 @@ namespace OpenCLNet {
 			}
 		}
 
-		static private IntPtr[] GetPlatformIDs() {
+		private static IntPtr[] GetPlatformIDs() {
 			IntPtr[] platformIDs;
 			ErrorCode result;
 			UInt32 returnedPlatforms;

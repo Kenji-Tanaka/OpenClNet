@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace OpenCLNet {
 	public class OpenCLException : Exception {
@@ -26,21 +25,5 @@ namespace OpenCLNet {
 			: base(message, innerException) {
 			this.ErrorCode = errorCode;
 		}
-	}
-
-	public class OpenCLBuildException : OpenCLException {
-		public List<String> BuildLogs = new List<String>();
-
-		public OpenCLBuildException(Program program, ErrorCode result)
-			: base("Build failed with error code " + result, result) {
-			foreach (var d in program.Devices) {
-				this.BuildLogs.Add(program.GetBuildLog(d));
-			}
-		}
-	}
-
-	public class OpenCLNotAvailableException : OpenCLException {
-		public OpenCLNotAvailableException()
-			: base("OpenCL not available") { }
 	}
 }

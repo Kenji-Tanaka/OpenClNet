@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 
 namespace OpenCLNet {
-	unsafe public class Device : IDisposable, InteropTools.IPropertyContainer {
+	public unsafe class Device : IDisposable, InteropTools.IPropertyContainer {
 		// Track whether Dispose has been called.
 		private Boolean disposed;
 		private Boolean IsSubDevice;
@@ -200,31 +200,23 @@ namespace OpenCLNet {
 		#region Properties
 		public IntPtr DeviceID { get; protected set; }
 
-		public DeviceType DeviceType {
-			get { return (DeviceType)InteropTools.ReadULong(this, (UInt32)DeviceInfo.TYPE); }
-		}
+		public DeviceType DeviceType => (DeviceType)InteropTools.ReadULong(this, (UInt32)DeviceInfo.TYPE);
 
 		/// <summary>
 		///     A unique device vendor identifier. An example of a unique device identifier could be the PCIe ID.
 		/// </summary>
-		public UInt32 VendorID {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.VENDOR_ID); }
-		}
+		public UInt32 VendorID => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.VENDOR_ID);
 
 		/// <summary>
 		///     The number of parallel compute cores on the OpenCL device. The minimum value is 1.
 		/// </summary>
-		public UInt32 MaxComputeUnits {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_COMPUTE_UNITS); }
-		}
+		public UInt32 MaxComputeUnits => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_COMPUTE_UNITS);
 
 		/// <summary>
 		///     Maximum dimensions that specify the global and local work-item IDs used by the data parallel execution model.
 		///     (Refer to clEnqueueNDRangeKernel). The minimum value is 3.
 		/// </summary>
-		public UInt32 MaxWorkItemDimensions {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_WORK_ITEM_DIMENSIONS); }
-		}
+		public UInt32 MaxWorkItemDimensions => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_WORK_ITEM_DIMENSIONS);
 
 		/// <summary>
 		///     Maximum number of work-items that can be specified in each dimension of
@@ -233,263 +225,185 @@ namespace OpenCLNet {
 		///     CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS.
 		///     The minimum value is (1, 1, 1).
 		/// </summary>
-		public IntPtr[] MaxWorkItemSizes {
-			get { return InteropTools.ReadIntPtrArray(this, (UInt32)DeviceInfo.MAX_WORK_ITEM_SIZES); }
-		}
+		public IntPtr[] MaxWorkItemSizes => InteropTools.ReadIntPtrArray(this, (UInt32)DeviceInfo.MAX_WORK_ITEM_SIZES);
 
 		/// <summary>
 		///     Maximum number of work-items in a work-group executing a kernel using the data parallel execution model.
 		///     (Refer to clEnqueueNDRangeKernel).
 		///     The minimum value is 1.
 		/// </summary>
-		public Int64 MaxWorkGroupSize {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.MAX_WORK_GROUP_SIZE).ToInt64(); }
-		}
+		public Int64 MaxWorkGroupSize => InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.MAX_WORK_GROUP_SIZE).ToInt64();
 
-		public UInt32 PreferredVectorWidthChar {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_CHAR); }
-		}
+		public UInt32 PreferredVectorWidthChar => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_CHAR);
 
-		public UInt32 PreferredVectorWidthShort {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_SHORT); }
-		}
+		public UInt32 PreferredVectorWidthShort => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_SHORT);
 
-		public UInt32 PreferredVectorWidthInt {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_INT); }
-		}
+		public UInt32 PreferredVectorWidthInt => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_INT);
 
-		public UInt32 PreferredVectorWidthLong {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_LONG); }
-		}
+		public UInt32 PreferredVectorWidthLong => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_LONG);
 
-		public UInt32 PreferredVectorWidthFloat {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_FLOAT); }
-		}
+		public UInt32 PreferredVectorWidthFloat => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_FLOAT);
 
-		public UInt32 PreferredVectorWidthDouble {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_DOUBLE); }
-		}
+		public UInt32 PreferredVectorWidthDouble => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_DOUBLE);
 
-		public UInt32 PreferredVectorWidthHalf {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_HALF); }
-		}
+		public UInt32 PreferredVectorWidthHalf => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.PREFERRED_VECTOR_WIDTH_HALF);
 
 		/// <summary>
 		///     Maximum configured clock frequency of the device in MHz.
 		/// </summary>
-		public UInt32 MaxClockFrequency {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_CLOCK_FREQUENCY); }
-		}
+		public UInt32 MaxClockFrequency => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_CLOCK_FREQUENCY);
 
 		/// <summary>
 		///     The default compute device address space size specified as an unsigned
 		///     integer value in bits. Currently supported values are 32 or 64 bits.
 		/// </summary>
-		public UInt32 AddressBits {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.ADDRESS_BITS); }
-		}
+		public UInt32 AddressBits => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.ADDRESS_BITS);
 
 		/// <summary>
 		///     Max size of memory object allocation in bytes. The minimum value is max
 		///     (1/4th of CL_DEVICE_GLOBAL_MEM_SIZE, 128*1024*1024)
 		/// </summary>
-		public UInt64 MaxMemAllocSize {
-			get { return InteropTools.ReadULong(this, (UInt32)DeviceInfo.MAX_MEM_ALLOC_SIZE); }
-		}
+		public UInt64 MaxMemAllocSize => InteropTools.ReadULong(this, (UInt32)DeviceInfo.MAX_MEM_ALLOC_SIZE);
 
 		/// <summary>
 		///     Is true if images are supported by the OpenCL device and CL_FALSE otherwise.
 		/// </summary>
-		public Boolean ImageSupport {
-			get { return InteropTools.ReadBool(this, (UInt32)DeviceInfo.IMAGE_SUPPORT); }
-		}
+		public Boolean ImageSupport => InteropTools.ReadBool(this, (UInt32)DeviceInfo.IMAGE_SUPPORT);
 
 		/// <summary>
 		///     Max number of simultaneous image objects that can be read by a kernel.
 		///     The minimum value is 128 if CL_DEVICE_IMAGE_SUPPORT is true.
 		/// </summary>
-		public UInt32 MaxReadImageArgs {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_READ_IMAGE_ARGS); }
-		}
+		public UInt32 MaxReadImageArgs => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_READ_IMAGE_ARGS);
 
 		/// <summary>
 		///     Max number of simultaneous image objects that can be written to by a
 		///     kernel. The minimum value is 8 if CL_DEVICE_IMAGE_SUPPORT is true.
 		/// </summary>
-		public UInt32 MaxWriteImageArgs {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_WRITE_IMAGE_ARGS); }
-		}
+		public UInt32 MaxWriteImageArgs => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_WRITE_IMAGE_ARGS);
 
 		/// <summary>
 		///     Max width of 2D image in pixels. The minimum value is 8192 if CL_DEVICE_IMAGE_SUPPORT is true.
 		/// </summary>
-		public Int64 Image2DMaxWidth {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE2D_MAX_WIDTH).ToInt64(); }
-		}
+		public Int64 Image2DMaxWidth => InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE2D_MAX_WIDTH).ToInt64();
 
 		/// <summary>
 		///     Max height of 2D image in pixels. The minimum value is 8192 if CL_DEVICE_IMAGE_SUPPORT is true.
 		/// </summary>
-		public Int64 Image2DMaxHeight {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE2D_MAX_HEIGHT).ToInt64(); }
-		}
+		public Int64 Image2DMaxHeight => InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE2D_MAX_HEIGHT).ToInt64();
 
 		/// <summary>
 		///     Max width of 3D image in pixels. The minimum value is 2048 if CL_DEVICE_IMAGE_SUPPORT is true.
 		/// </summary>
-		public Int64 Image3DMaxWidth {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE3D_MAX_WIDTH).ToInt64(); }
-		}
+		public Int64 Image3DMaxWidth => InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE3D_MAX_WIDTH).ToInt64();
 
 		/// <summary>
 		///     Max height of 3D image in pixels. The minimum value is 2048 if CL_DEVICE_IMAGE_SUPPORT is true.
 		/// </summary>
-		public Int64 Image3DMaxHeight {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE3D_MAX_HEIGHT).ToInt64(); }
-		}
+		public Int64 Image3DMaxHeight => InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE3D_MAX_HEIGHT).ToInt64();
 
 		/// <summary>
 		///     Max depth of 3D image in pixels. The minimum value is 2048 if CL_DEVICE_IMAGE_SUPPORT is true.
 		/// </summary>
-		public Int64 Image3DMaxDepth {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE3D_MAX_DEPTH).ToInt64(); }
-		}
+		public Int64 Image3DMaxDepth => InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.IMAGE3D_MAX_DEPTH).ToInt64();
 
 		/// <summary>
 		///     Maximum number of samplers that can be used in a kernel. Refer to section 6.11.8 for a detailed
 		///     description on samplers. The minimum value is 16 if CL_DEVICE_IMAGE_SUPPORT is true.
 		/// </summary>
-		public UInt32 MaxSamplers {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_SAMPLERS); }
-		}
+		public UInt32 MaxSamplers => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_SAMPLERS);
 
 		/// <summary>
 		///     Max size in bytes of the arguments that can be passed to a kernel. The minimum value is 256.
 		/// </summary>
-		public Int64 MaxParameterSize {
-			get { return InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.MAX_PARAMETER_SIZE).ToInt64(); }
-		}
+		public Int64 MaxParameterSize => InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.MAX_PARAMETER_SIZE).ToInt64();
 
 		/// <summary>
 		///     Describes the alignment in bits of the base address of any allocated memory object.
 		/// </summary>
-		public UInt32 MemBaseAddrAlign {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MEM_BASE_ADDR_ALIGN); }
-		}
+		public UInt32 MemBaseAddrAlign => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MEM_BASE_ADDR_ALIGN);
 
 		/// <summary>
 		///     The smallest alignment in bytes which can be used for any data type.
 		/// </summary>
-		public UInt32 MinDataTypeAlignSize {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MIN_DATA_TYPE_ALIGN_SIZE); }
-		}
+		public UInt32 MinDataTypeAlignSize => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MIN_DATA_TYPE_ALIGN_SIZE);
 
-		public UInt64 SingleFPConfig {
-			get { return InteropTools.ReadULong(this, (UInt32)DeviceInfo.SINGLE_FP_CONFIG); }
-		}
+		public UInt64 SingleFPConfig => InteropTools.ReadULong(this, (UInt32)DeviceInfo.SINGLE_FP_CONFIG);
 
 		/// <summary>
 		///     Type of global memory cache supported. Valid values are: CL_NONE, CL_READ_ONLY_CACHE and CL_READ_WRITE_CACHE.
 		/// </summary>
-		public DeviceMemCacheType GlobalMemCacheType {
-			get { return (DeviceMemCacheType)InteropTools.ReadUInt(this, (UInt32)DeviceInfo.GLOBAL_MEM_CACHE_TYPE); }
-		}
+		public DeviceMemCacheType GlobalMemCacheType => (DeviceMemCacheType)InteropTools.ReadUInt(this, (UInt32)DeviceInfo.GLOBAL_MEM_CACHE_TYPE);
 
 		/// <summary>
 		///     Size of global memory cache line in bytes.
 		/// </summary>
-		public UInt32 GlobalMemCacheLineSize {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.GLOBAL_MEM_CACHELINE_SIZE); }
-		}
+		public UInt32 GlobalMemCacheLineSize => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.GLOBAL_MEM_CACHELINE_SIZE);
 
 		/// <summary>
 		///     Size of global memory cache in bytes.
 		/// </summary>
-		public UInt64 GlobalMemCacheSize {
-			get { return InteropTools.ReadULong(this, (UInt32)DeviceInfo.GLOBAL_MEM_CACHE_SIZE); }
-		}
+		public UInt64 GlobalMemCacheSize => InteropTools.ReadULong(this, (UInt32)DeviceInfo.GLOBAL_MEM_CACHE_SIZE);
 
 		/// <summary>
 		///     Size of global device memory in bytes.
 		/// </summary>
-		public UInt64 GlobalMemSize {
-			get { return InteropTools.ReadULong(this, (UInt32)DeviceInfo.GLOBAL_MEM_SIZE); }
-		}
+		public UInt64 GlobalMemSize => InteropTools.ReadULong(this, (UInt32)DeviceInfo.GLOBAL_MEM_SIZE);
 
 		/// <summary>
 		///     Max size in bytes of a constant buffer allocation. The minimum value is 64 KB.
 		/// </summary>
-		public UInt64 MaxConstantBufferSize {
-			get { return InteropTools.ReadULong(this, (UInt32)DeviceInfo.MAX_CONSTANT_BUFFER_SIZE); }
-		}
+		public UInt64 MaxConstantBufferSize => InteropTools.ReadULong(this, (UInt32)DeviceInfo.MAX_CONSTANT_BUFFER_SIZE);
 
 		/// <summary>
 		///     Max number of arguments declared with the __constant qualifier in a kernel. The minimum value is 8.
 		/// </summary>
-		public UInt32 MaxConstantArgs {
-			get { return InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_CONSTANT_ARGS); }
-		}
+		public UInt32 MaxConstantArgs => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MAX_CONSTANT_ARGS);
 
 		/// <summary>
 		///     Type of local memory supported. This can be set to CL_LOCAL implying dedicated local memory storage such as SRAM, or CL_GLOBAL.
 		/// </summary>
-		public DeviceLocalMemType LocalMemType {
-			get { return (DeviceLocalMemType)InteropTools.ReadUInt(this, (UInt32)DeviceInfo.LOCAL_MEM_TYPE); }
-		}
+		public DeviceLocalMemType LocalMemType => (DeviceLocalMemType)InteropTools.ReadUInt(this, (UInt32)DeviceInfo.LOCAL_MEM_TYPE);
 
 		/// <summary>
 		///     Size of local memory arena in bytes. The minimum value is 16 KB.
 		/// </summary>
-		public UInt64 LocalMemSize {
-			get { return InteropTools.ReadULong(this, (UInt32)DeviceInfo.LOCAL_MEM_SIZE); }
-		}
+		public UInt64 LocalMemSize => InteropTools.ReadULong(this, (UInt32)DeviceInfo.LOCAL_MEM_SIZE);
 
 		/// <summary>
 		///     Is CL_TRUE if the device implements error correction for the memories,
 		///     caches, registers etc. in the device. Is CL_FALSE if the device does not
 		///     implement error correction. This can be a requirement for certain clients of OpenCL.
 		/// </summary>
-		public Boolean ErrorCorrectionSupport {
-			get { return InteropTools.ReadBool(this, (UInt32)DeviceInfo.ERROR_CORRECTION_SUPPORT); }
-		}
+		public Boolean ErrorCorrectionSupport => InteropTools.ReadBool(this, (UInt32)DeviceInfo.ERROR_CORRECTION_SUPPORT);
 
 		/// <summary>
 		///     Is CL_TRUE if the device and the host have a unified memory subsystem
 		///     and is CL_FALSE otherwise.
 		/// </summary>
-		public Boolean HostUnifiedMemory {
-			get { return InteropTools.ReadBool(this, (UInt32)DeviceInfo.HOST_UNIFIED_MEMORY); }
-		}
+		public Boolean HostUnifiedMemory => InteropTools.ReadBool(this, (UInt32)DeviceInfo.HOST_UNIFIED_MEMORY);
 
 		/// <summary>
 		///     Describes the resolution of device timer. This is measured in nanoseconds. Refer to section 5.9 for details.
 		/// </summary>
-		public UInt64 ProfilingTimerResolution {
-			get { return (UInt64)InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.PROFILING_TIMER_RESOLUTION).ToInt64(); }
-		}
+		public UInt64 ProfilingTimerResolution => (UInt64)InteropTools.ReadIntPtr(this, (UInt32)DeviceInfo.PROFILING_TIMER_RESOLUTION).ToInt64();
 
 		/// <summary>
 		///     Is CL_TRUE if the OpenCL device is a little endian device and CL_FALSE otherwise.
 		/// </summary>
-		public Boolean EndianLittle {
-			get { return InteropTools.ReadBool(this, (UInt32)DeviceInfo.ENDIAN_LITTLE); }
-		}
+		public Boolean EndianLittle => InteropTools.ReadBool(this, (UInt32)DeviceInfo.ENDIAN_LITTLE);
 
 		/// <summary>
 		///     Is CL_TRUE if the device is available and CL_FALSE if the device is not available.
 		/// </summary>
-		public Boolean Available {
-			get { return InteropTools.ReadBool(this, (UInt32)DeviceInfo.AVAILABLE); }
-		}
+		public Boolean Available => InteropTools.ReadBool(this, (UInt32)DeviceInfo.AVAILABLE);
 
 		/// <summary>
 		///     Is CL_FALSE if the implementation does not have a compiler available to compile the program source.
 		///     Is CL_TRUE if the compiler is available.
 		///     This can be CL_FALSE for the embededed platform profile only.
 		/// </summary>
-		public Boolean CompilerAvailable {
-			get { return InteropTools.ReadBool(this, (UInt32)DeviceInfo.COMPILER_AVAILABLE); }
-		}
+		public Boolean CompilerAvailable => InteropTools.ReadBool(this, (UInt32)DeviceInfo.COMPILER_AVAILABLE);
 
 		/// <summary>
 		///     Describes the execution capabilities of the device. This is a bit-field that describes one or more of the following values:
@@ -497,9 +411,7 @@ namespace OpenCLNet {
 		///     CL_EXEC_NATIVE_KERNEL – The OpenCL device can execute native kernels.
 		///     The mandated minimum capability is: CL_EXEC_KERNEL.
 		/// </summary>
-		public UInt64 ExecutionCapabilities {
-			get { return InteropTools.ReadULong(this, (UInt32)DeviceInfo.EXECUTION_CAPABILITIES); }
-		}
+		public UInt64 ExecutionCapabilities => InteropTools.ReadULong(this, (UInt32)DeviceInfo.EXECUTION_CAPABILITIES);
 
 		/// <summary>
 		///     Describes the command-queue properties supported by the device.
@@ -510,9 +422,7 @@ namespace OpenCLNet {
 		///     The mandated minimum capability is:
 		///     CL_QUEUE_PROFILING_ENABLE.
 		/// </summary>
-		public UInt64 QueueProperties {
-			get { return InteropTools.ReadULong(this, (UInt32)DeviceInfo.QUEUE_PROPERTIES); }
-		}
+		public UInt64 QueueProperties => InteropTools.ReadULong(this, (UInt32)DeviceInfo.QUEUE_PROPERTIES);
 
 		/// <summary>
 		///     The platform associated with this device.
@@ -522,23 +432,17 @@ namespace OpenCLNet {
 		/// <summary>
 		///     Device name string.
 		/// </summary>
-		public String Name {
-			get { return InteropTools.ReadString(this, (UInt32)DeviceInfo.NAME); }
-		}
+		public String Name => InteropTools.ReadString(this, (UInt32)DeviceInfo.NAME);
 
 		/// <summary>
 		///     Vendor name string.
 		/// </summary>
-		public String Vendor {
-			get { return InteropTools.ReadString(this, (UInt32)DeviceInfo.VENDOR); }
-		}
+		public String Vendor => InteropTools.ReadString(this, (UInt32)DeviceInfo.VENDOR);
 
 		/// <summary>
 		///     OpenCL software driver version string in the form major_number.minor_number.
 		/// </summary>
-		public String DriverVersion {
-			get { return InteropTools.ReadString(this, (UInt32)DeviceInfo.DRIVER_VERSION); }
-		}
+		public String DriverVersion => InteropTools.ReadString(this, (UInt32)DeviceInfo.DRIVER_VERSION);
 
 		/// <summary>
 		///     OpenCL profile string. Returns the profile name supported by the device.
@@ -547,27 +451,21 @@ namespace OpenCLNet {
 		///     core specification and does not require any extensions to be supported).
 		///     EMBEDDED_PROFILE - if the device supports the OpenCL embedded profile.
 		/// </summary>
-		public String Profile {
-			get { return InteropTools.ReadString(this, (UInt32)DeviceInfo.PROFILE); }
-		}
+		public String Profile => InteropTools.ReadString(this, (UInt32)DeviceInfo.PROFILE);
 
 		/// <summary>
 		///     OpenCL version string. Returns the OpenCL version supported by the device. This version string has the
 		///     following format:
 		///     OpenCL&lt;space&gt;&lt;major_version.minor_version&gt;&lt;space&gt;&lt;vendor-specificinformation&gt;
 		/// </summary>
-		public String Version {
-			get { return InteropTools.ReadString(this, (UInt32)DeviceInfo.VERSION); }
-		}
+		public String Version => InteropTools.ReadString(this, (UInt32)DeviceInfo.VERSION);
 
 		/// <summary>
 		///     OpenCL C version string. Returns the highest OpenCL C version supported
 		///     by the compiler for this device. This version string has the following format:
 		///     OpenCL&lt;space&gt;C&lt;space&gt;&lt;major_version.minor_version&gt;&lt;space&gt;&lt;vendor-specific information&gt;
 		/// </summary>
-		public String OpenCL_C_Version {
-			get { return InteropTools.ReadString(this, (UInt32)DeviceInfo.OPENCL_C_VERSION); }
-		}
+		public String OpenCL_C_Version => InteropTools.ReadString(this, (UInt32)DeviceInfo.OPENCL_C_VERSION);
 
 		/// <summary>
 		///     Returns a space separated list of extension names
@@ -589,9 +487,7 @@ namespace OpenCLNet {
 		///     Please refer to the OpenCL specification for a detailed
 		///     description of these extensions.
 		/// </summary>
-		public String Extensions {
-			get { return InteropTools.ReadString(this, (UInt32)DeviceInfo.EXTENSIONS); }
-		}
+		public String Extensions => InteropTools.ReadString(this, (UInt32)DeviceInfo.EXTENSIONS);
 		#endregion
 
 		#region IPropertyContainer Members

@@ -14,21 +14,15 @@ namespace OpenCLNet {
 	///     Note that pointer arguments are set by passing their OpenCL memory object,
 	///     not native pointers.
 	/// </summary>
-	unsafe public class Kernel : InteropTools.IPropertyContainer {
+	public unsafe class Kernel : InteropTools.IPropertyContainer {
 		// Track whether Dispose has been called.
 		private Boolean disposed;
 
-		public String FunctionName {
-			get { return InteropTools.ReadString(this, (UInt32)KernelInfo.FUNCTION_NAME); }
-		}
+		public String FunctionName => InteropTools.ReadString(this, (UInt32)KernelInfo.FUNCTION_NAME);
 
-		public UInt32 NumArgs {
-			get { return InteropTools.ReadUInt(this, (UInt32)KernelInfo.NUM_ARGS); }
-		}
+		public UInt32 NumArgs => InteropTools.ReadUInt(this, (UInt32)KernelInfo.NUM_ARGS);
 
-		public UInt32 ReferenceCount {
-			get { return InteropTools.ReadUInt(this, (UInt32)KernelInfo.REFERENCE_COUNT); }
-		}
+		public UInt32 ReferenceCount => InteropTools.ReadUInt(this, (UInt32)KernelInfo.REFERENCE_COUNT);
 
 		public Context Context { get; protected set; }
 		public Program Program { get; protected set; }
