@@ -68,6 +68,8 @@ namespace OpenCLNet {
 			sb.AppendLine("MemBaseAddrAlign: " + this.MemBaseAddrAlign);
 			sb.AppendLine("MinDataTypeAlignSize: " + this.MinDataTypeAlignSize);
 			sb.AppendLine("SingleFPConfig: " + this.SingleFPConfig);
+			sb.AppendLine("DoubleFPConfig: " + this.DoubleFPConfig);
+			sb.AppendLine("HalfFPConfig: " + this.HalfFPConfig);
 			sb.AppendLine("GlobalMemCacheType: " + this.GlobalMemCacheType);
 			sb.AppendLine("GlobalMemCacheLineSize: " + this.GlobalMemCacheLineSize);
 			sb.AppendLine("GlobalMemCacheSize: " + this.GlobalMemCacheSize);
@@ -348,7 +350,14 @@ namespace OpenCLNet {
 		/// </summary>
 		public UInt32 MinDataTypeAlignSize => InteropTools.ReadUInt(this, (UInt32)DeviceInfo.MIN_DATA_TYPE_ALIGN_SIZE);
 
+		public Boolean CanHalf => this.NativeVectorWidthHalf >= 1;
+		public Boolean CanDouble => this.NativeVectorWidthDouble >= 1;
+
 		public FpConfig SingleFPConfig => (FpConfig)InteropTools.ReadULong(this, (UInt32)DeviceInfo.SINGLE_FP_CONFIG);
+
+		public FpConfig DoubleFPConfig => this.CanDouble ? (FpConfig)InteropTools.ReadULong(this, (UInt32)DeviceInfo.DOUBLE_FP_CONFIG) : 0;
+
+		public FpConfig HalfFPConfig => this.CanHalf ? (FpConfig)InteropTools.ReadULong(this, (UInt32)DeviceInfo.HALF_FP_CONFIG) : 0;
 
 		/// <summary>
 		///     Type of global memory cache supported. Valid values are: CL_NONE, CL_READ_ONLY_CACHE and CL_READ_WRITE_CACHE.
@@ -431,7 +440,7 @@ namespace OpenCLNet {
 		///     CL_EXEC_NATIVE_KERNEL – The OpenCL device can execute native kernels.
 		///     The mandated minimum capability is: CL_EXEC_KERNEL.
 		/// </summary>
-		public UInt64 ExecutionCapabilities => InteropTools.ReadULong(this, (UInt32)DeviceInfo.EXECUTION_CAPABILITIES);
+		public DeviceExecCapabilities ExecutionCapabilities => (DeviceExecCapabilities)InteropTools.ReadULong(this, (UInt32)DeviceInfo.EXECUTION_CAPABILITIES);
 
 		/// <summary>
 		///     Describes the command-queue properties supported by the device.

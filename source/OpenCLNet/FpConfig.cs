@@ -3,6 +3,7 @@ using System;
 namespace OpenCLNet {
 	[Flags]
 	public enum FpConfig : ulong {
+		NONE = 0,
 		DENORM = 1 << 0,
 		INF_NAN = 1 << 1,
 		ROUND_TO_NEAREST = 1 << 2,

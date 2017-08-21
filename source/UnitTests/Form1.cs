@@ -102,8 +102,8 @@ namespace UnitTests {
 
 			Array.Clear(srcData, 0, srcData.Length);
 			for (var i = 8; i < 12; i++)
-			for (var j = 8; j < 12; j++)
-				srcData[bufWidth * i + j] = 1;
+				for (var j = 8; j < 12; j++)
+					srcData[bufWidth * i + j] = 1;
 			Array.Clear(cmpData, 0, cmpData.Length);
 
 			try {
@@ -291,7 +291,7 @@ namespace UnitTests {
 
 				d = devices[deviceIndex];
 				using (var cq = c.CreateCommandQueue(d)) {
-					if ((d.ExecutionCapabilities & (UInt64)DeviceExecCapabilities.NATIVE_KERNEL) != 0) {
+					if (d.ExecutionCapabilities.HasFlag(DeviceExecCapabilities.NATIVE_KERNEL)) {
 						this.Output("Testing native kernel execution");
 						cq.EnqueueNativeKernel(this.NativeKernelCallRef, this, null);
 						cq.Finish();
