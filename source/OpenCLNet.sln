@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageCrossFade", "vs2010\ImageCrossFade\ImageCrossFade.csproj", "{2C20473B-CD81-422C-B525-33A14F13B1A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageCrossFade", "ImageCrossFade\ImageCrossFade.csproj", "{2C20473B-CD81-422C-B525-33A14F13B1A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCLImageTest", "vs2010\OpenCLImageTest\OpenCLImageTest.csproj", "{75B0ED06-EC94-489B-B951-A4D4970A8B94}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCLImageTest", "OpenCLImageTest\OpenCLImageTest.csproj", "{75B0ED06-EC94-489B-B951-A4D4970A8B94}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCLNet", "vs2010\OpenCLNet\OpenCLNet.csproj", "{0946E1A6-5488-4711-AD10-D54D6A5D2F32}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCLNet", "OpenCLNet\OpenCLNet.csproj", "{0946E1A6-5488-4711-AD10-D54D6A5D2F32}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCLTest", "vs2010\OpenCLTest\OpenCLTest.csproj", "{5667200A-99B7-4A42-B170-E7D4371631D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCLTest", "OpenCLTest\OpenCLTest.csproj", "{5667200A-99B7-4A42-B170-E7D4371631D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "vs2010\UnitTests\UnitTests.csproj", "{D1EE52C7-C504-4BE2-9546-315B1E2CA2D5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{D1EE52C7-C504-4BE2-9546-315B1E2CA2D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
